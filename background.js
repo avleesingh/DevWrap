@@ -142,12 +142,12 @@ async function commitCurrentSession() {
   const elapsedMs = now - currentSession.startTime;
   const elapsedSeconds = Math.floor(elapsedMs / 1000);
 
-  // Reset session start time to now so we don't double count
-  currentSession.startTime = now;
-
   if (elapsedSeconds <= 0) {
     return;
   }
+
+  // Only advance start time by the whole seconds committed so partial ms are preserved
+  currentSession.startTime += elapsedSeconds * 1000;
 
   const domain = currentSession.domain;
   const today = getTodayKey();
@@ -246,6 +246,18 @@ async function evaluateActiveTracking() {
     console.error('[DevWrap] Error evaluating active tab:', error);
   }
 }
+
+// Continuous 1-second active tracking interval for web tabs
+let activeWebTrackingTimer = null;
+function startActiveWebTrackingLoop() {
+  if (activeWebTrackingTimer) clearInterval(activeWebTrackingTimer);
+  activeWebTrackingTimer = setInterval(async () => {
+    if (currentSession && !isUserIdle && isWindowFocused) {
+      await commitCurrentSession();
+    }
+  }, 1000);
+}
+startActiveWebTrackingLoop();
 
 // -------------------------------------------------------------
 // Live Health Check & Desktop Stats Ingestion Loop
@@ -679,10 +691,8 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
 
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
-    isWindowFocused = false;
     if (currentSession) {
       await commitCurrentSession();
-      currentSession = null;
     }
   } else {
     isWindowFocused = true;
@@ -783,6 +793,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           activeSession: currentSession ? {
             domain: currentSession.domain,
             subName: currentSession.subName,
+            startTime: currentSession.startTime,
             isTracking: true
           } : null
         });

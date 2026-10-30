@@ -616,83 +616,13 @@ async function ingestDesktopStats() {
 
     desktopStats = statsByFilter;
 
-    // Ensure subscriptions and usageData are loaded from storage if memory state is empty
-    if (subscriptions.length === 0) {
-      const stored = await chrome.storage.local.get(['subscriptions', 'usageData']);
-      if (stored.subscriptions && stored.subscriptions.length > 0) {
-        subscriptions = stored.subscriptions;
-      }
-      if (stored.usageData) {
-        usageData = stored.usageData;
-      }
-    }
-
-    // Update usageData for monitored subscriptions
-    const today = getTodayKey();
-    const month = getCurrentMonthKey();
-    let hasChanges = false;
-
-    subscriptions.forEach(sub => {
-      const dom = normalizeDomain(sub.domain);
-
-      // Aggregate desktop heartbeats matching custom process filters
-      let matchingSeconds = 0;
-      const dailyDesktop = {};
-
-      heartbeats.forEach(hb => {
-        const dur = Number(hb.duration_seconds) || 15;
-        if (matchesSubscriptionHeartbeat(sub, hb)) {
-          matchingSeconds += dur;
-          const hbDay = hb.timestamp ? getDateKey(new Date(hb.timestamp * 1000)) : today;
-          dailyDesktop[hbDay] = (dailyDesktop[hbDay] || 0) + dur;
-        }
-      });
-
-      if (!usageData[dom]) {
-        usageData[dom] = {
-          webSeconds: 0,
-          desktopSeconds: 0,
-          baselineDesktopSeconds: 0,
-          totalSeconds: 0,
-          dailySeconds: {},
-          monthlySeconds: {},
-          dailyWebSeconds: {},
-          dailyDesktopSeconds: {},
-          lastActive: null
-        };
-      }
-
-      if (!usageData[dom].dailySeconds) usageData[dom].dailySeconds = {};
-      if (!usageData[dom].dailyWebSeconds) usageData[dom].dailyWebSeconds = {};
-      if (!usageData[dom].dailyDesktopSeconds) usageData[dom].dailyDesktopSeconds = {};
-      if (!usageData[dom].monthlySeconds) usageData[dom].monthlySeconds = {};
-
-      // Record daily desktop tracking and update combined daily totals
-      Object.entries(dailyDesktop).forEach(([dayKey, sec]) => {
-        usageData[dom].dailyDesktopSeconds[dayKey] = sec;
-        const webSec = usageData[dom].dailyWebSeconds[dayKey] || 0;
-        usageData[dom].dailySeconds[dayKey] = webSec + sec;
-      });
-
-      const baseline = usageData[dom].baselineDesktopSeconds || 0;
-      const newDesktopSeconds = baseline + matchingSeconds;
-
-      if (usageData[dom].desktopSeconds !== newDesktopSeconds) {
-        usageData[dom].desktopSeconds = newDesktopSeconds;
-        usageData[dom].totalSeconds = (usageData[dom].webSeconds || 0) + newDesktopSeconds;
-        usageData[dom].monthlySeconds[month] = usageData[dom].totalSeconds;
-        hasChanges = true;
+    // Delegate desktop stats sync to background script so storage isn't overwritten by popup
+    chrome.runtime.sendMessage({ action: 'SYNC_DESKTOP_STATS' }, (res) => {
+      if (res && res.usageData) {
+        usageData = res.usageData;
+        renderUI();
       }
     });
-
-    await chrome.storage.local.set({
-      desktopHeartbeats: heartbeats,
-      desktopStats: statsByFilter,
-      lastDesktopSync: Date.now(),
-      usageData
-    });
-
-    renderUI();
   } catch (err) {
     console.warn('[DevWrap] Error ingesting desktop stats:', err);
   }
@@ -711,21 +641,34 @@ function getTodaySecondsForSub(sub) {
   const today = getTodayKey();
   const dom = normalizeDomain(sub.domain);
   const usage = usageData[dom];
-  if (!usage) return 0;
+  
+  let totalSec = 0;
 
-  // 1. Direct dailySeconds for today
-  if (usage.dailySeconds && typeof usage.dailySeconds[today] === 'number') {
-    return usage.dailySeconds[today];
+  if (usage) {
+    if (usage.dailySeconds && typeof usage.dailySeconds[today] === 'number') {
+      totalSec = usage.dailySeconds[today];
+    } else {
+      const webToday = usage.dailyWebSeconds?.[today] || 0;
+      const desktopToday = usage.dailyDesktopSeconds?.[today] || 0;
+      totalSec = webToday + desktopToday;
+    }
+
+    // Fallback: If daily tracking is 0, check if active records occurred today
+    if (totalSec === 0 && usage.lastActive) {
+      const lastActiveDate = getDateKey(new Date(usage.lastActive));
+      if (lastActiveDate === today) {
+        totalSec = (usage.webSeconds || 0) + (usage.desktopSeconds || 0);
+      }
+    }
   }
 
-  // 2. Sum of dailyWebSeconds and dailyDesktopSeconds for today
-  const webToday = usage.dailyWebSeconds?.[today] || 0;
-  const desktopToday = usage.dailyDesktopSeconds?.[today] || 0;
-  if (webToday > 0 || desktopToday > 0) {
-    return webToday + desktopToday;
+  // Include in-progress live active session seconds so UI increments immediately in real time
+  if (activeSession && activeSession.isTracking && activeSession.domain === dom && activeSession.startTime) {
+    const liveSecs = Math.max(0, Math.floor((Date.now() - activeSession.startTime) / 1000));
+    totalSec += liveSecs;
   }
 
-  return 0;
+  return totalSec;
 }
 
 /**
@@ -844,14 +787,17 @@ function renderSummaryHeader() {
   totalSpendEl.textContent = `$${totalMonthlySpend.toFixed(2)}`;
   subCountEl.textContent = `${subscriptions.length} subscription${subscriptions.length === 1 ? '' : 's'}`;
 
-  // Format today's active time cleanly
+  // Format today's active time cleanly with seconds resolution for immediate feedback
   if (totalTodaySeconds >= 3600) {
     const hrs = Math.floor(totalTodaySeconds / 3600);
     const mins = Math.floor((totalTodaySeconds % 3600) / 60);
     totalHoursEl.textContent = mins > 0 ? `${hrs}h ${mins}m` : `${hrs} hrs`;
-  } else if (totalTodaySeconds > 0) {
+  } else if (totalTodaySeconds >= 60) {
     const mins = Math.floor(totalTodaySeconds / 60);
-    totalHoursEl.textContent = `${mins}m today`;
+    const secs = totalTodaySeconds % 60;
+    totalHoursEl.textContent = secs > 0 ? `${mins}m ${secs}s` : `${mins}m today`;
+  } else if (totalTodaySeconds > 0) {
+    totalHoursEl.textContent = `${totalTodaySeconds}s today`;
   } else {
     totalHoursEl.textContent = '0m today';
   }
@@ -915,16 +861,24 @@ function renderSubscriptionsList() {
     let statusBadge = '';
 
     if (todaySeconds > 0) {
-      const mins = Math.floor(todaySeconds / 60);
-      const hrs = (todaySeconds / 3600).toFixed(1);
-      trackedTimeHtml = `<div class="text-xs font-bold text-emerald-400">${mins}m (${hrs}h)</div>`;
+      let formatted = '';
+      if (todaySeconds < 60) {
+        formatted = `${todaySeconds}s today`;
+      } else {
+        const mins = Math.floor(todaySeconds / 60);
+        const remSecs = todaySeconds % 60;
+        const hrs = (todaySeconds / 3600).toFixed(1);
+        formatted = remSecs > 0 ? `${mins}m ${remSecs}s` : `${mins}m (${hrs}h)`;
+      }
+
+      trackedTimeHtml = `<div class="text-xs font-bold text-emerald-400 font-mono flex items-center justify-center gap-1">${isActivelyTracking ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>' : ''}${formatted}</div>`;
       statusBadge = `
         <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 border border-emerald-500/40 text-emerald-300">
           ● Active Today
         </span>
       `;
     } else {
-      trackedTimeHtml = `<div class="text-xs font-semibold text-slate-400">0m today</div>`;
+      trackedTimeHtml = `<div class="text-xs font-semibold text-slate-400 font-mono">0m today</div>`;
       statusBadge = `
         <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">
           ● Refreshed Today
@@ -1744,6 +1698,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Run 1-second countdown clock ticker
   if (dropCountdownTimer) clearInterval(dropCountdownTimer);
   dropCountdownTimer = setInterval(updateDropCountdownUI, 1000);
+
+  // Run 1-second live ticker to smoothly increment active tracking seconds in real time
+  setInterval(() => {
+    if (activeSession && activeSession.isTracking) {
+      renderSummaryHeader();
+      renderSubscriptionsList();
+    }
+  }, 1000);
 
   // Run 5-second health check and ingestion loop while popup is active
   setInterval(checkDesktopCompanionHealth, 5000);
