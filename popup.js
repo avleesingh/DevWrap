@@ -642,33 +642,27 @@ function getTodaySecondsForSub(sub) {
   const dom = normalizeDomain(sub.domain);
   const usage = usageData[dom];
   
-  let totalSec = 0;
+  if (!usage) return 0;
 
-  if (usage) {
-    if (usage.dailySeconds && typeof usage.dailySeconds[today] === 'number') {
-      totalSec = usage.dailySeconds[today];
-    } else {
-      const webToday = usage.dailyWebSeconds?.[today] || 0;
-      const desktopToday = usage.dailyDesktopSeconds?.[today] || 0;
-      totalSec = webToday + desktopToday;
-    }
+  if (usage.dailySeconds && typeof usage.dailySeconds[today] === 'number') {
+    return usage.dailySeconds[today];
+  }
 
-    // Fallback: If daily tracking is 0, check if active records occurred today
-    if (totalSec === 0 && usage.lastActive) {
-      const lastActiveDate = getDateKey(new Date(usage.lastActive));
-      if (lastActiveDate === today) {
-        totalSec = (usage.webSeconds || 0) + (usage.desktopSeconds || 0);
-      }
+  const webToday = usage.dailyWebSeconds?.[today] || 0;
+  const desktopToday = usage.dailyDesktopSeconds?.[today] || 0;
+  if (webToday > 0 || desktopToday > 0) {
+    return webToday + desktopToday;
+  }
+
+  // Fallback: If daily tracking is 0, check if active records occurred today
+  if (usage.lastActive) {
+    const lastActiveDate = getDateKey(new Date(usage.lastActive));
+    if (lastActiveDate === today) {
+      return (usage.webSeconds || 0) + (usage.desktopSeconds || 0);
     }
   }
 
-  // Include in-progress live active session seconds so UI increments immediately in real time
-  if (activeSession && activeSession.isTracking && activeSession.domain === dom && activeSession.startTime) {
-    const liveSecs = Math.max(0, Math.floor((Date.now() - activeSession.startTime) / 1000));
-    totalSec += liveSecs;
-  }
-
-  return totalSec;
+  return 0;
 }
 
 /**
@@ -787,17 +781,14 @@ function renderSummaryHeader() {
   totalSpendEl.textContent = `$${totalMonthlySpend.toFixed(2)}`;
   subCountEl.textContent = `${subscriptions.length} subscription${subscriptions.length === 1 ? '' : 's'}`;
 
-  // Format today's active time cleanly with seconds resolution for immediate feedback
-  if (totalTodaySeconds >= 3600) {
-    const hrs = Math.floor(totalTodaySeconds / 3600);
-    const mins = Math.floor((totalTodaySeconds % 3600) / 60);
-    totalHoursEl.textContent = mins > 0 ? `${hrs}h ${mins}m` : `${hrs} hrs`;
-  } else if (totalTodaySeconds >= 60) {
-    const mins = Math.floor(totalTodaySeconds / 60);
-    const secs = totalTodaySeconds % 60;
-    totalHoursEl.textContent = secs > 0 ? `${mins}m ${secs}s` : `${mins}m today`;
-  } else if (totalTodaySeconds > 0) {
-    totalHoursEl.textContent = `${totalTodaySeconds}s today`;
+  const totalTodayMins = Math.floor(totalTodaySeconds / 60);
+
+  // Format today's active time cleanly in minutes/hours only
+  if (totalTodayMins >= 60) {
+    const hrs = (totalTodaySeconds / 3600).toFixed(1);
+    totalHoursEl.textContent = `${hrs} hrs`;
+  } else if (totalTodayMins > 0) {
+    totalHoursEl.textContent = `${totalTodayMins}m today`;
   } else {
     totalHoursEl.textContent = '0m today';
   }
@@ -856,22 +847,15 @@ function renderSubscriptionsList() {
     const toolIcon = getToolIcon(sub);
     const isDesktop = sub.type === 'desktop';
 
-    // Time tracked displayed for today (refreshed daily at 00:00 midnight)
+    // Time tracked displayed for today (refreshed daily at 00:00 midnight) - minutes only
     let trackedTimeHtml = '';
     let statusBadge = '';
 
-    if (todaySeconds > 0) {
-      let formatted = '';
-      if (todaySeconds < 60) {
-        formatted = `${todaySeconds}s today`;
-      } else {
-        const mins = Math.floor(todaySeconds / 60);
-        const remSecs = todaySeconds % 60;
-        const hrs = (todaySeconds / 3600).toFixed(1);
-        formatted = remSecs > 0 ? `${mins}m ${remSecs}s` : `${mins}m (${hrs}h)`;
-      }
+    const todayMins = Math.floor(todaySeconds / 60);
 
-      trackedTimeHtml = `<div class="text-xs font-bold text-emerald-400 font-mono flex items-center justify-center gap-1">${isActivelyTracking ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>' : ''}${formatted}</div>`;
+    if (todayMins > 0) {
+      const hrs = (todaySeconds / 3600).toFixed(1);
+      trackedTimeHtml = `<div class="text-xs font-bold text-emerald-400 font-mono">${todayMins}m (${hrs}h)</div>`;
       statusBadge = `
         <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 border border-emerald-500/40 text-emerald-300">
           ● Active Today
@@ -1698,14 +1682,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Run 1-second countdown clock ticker
   if (dropCountdownTimer) clearInterval(dropCountdownTimer);
   dropCountdownTimer = setInterval(updateDropCountdownUI, 1000);
-
-  // Run 1-second live ticker to smoothly increment active tracking seconds in real time
-  setInterval(() => {
-    if (activeSession && activeSession.isTracking) {
-      renderSummaryHeader();
-      renderSubscriptionsList();
-    }
-  }, 1000);
 
   // Run 5-second health check and ingestion loop while popup is active
   setInterval(checkDesktopCompanionHealth, 5000);
