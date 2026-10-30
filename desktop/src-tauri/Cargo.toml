@@ -1,0 +1,33 @@
+[package]
+name = "devwrap-desktop"
+version = "0.1.0"
+description = "DevWrap Desktop Companion App"
+authors = ["DevWrap Team"]
+edition = "2021"
+
+[lib]
+name = "devwrap_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
+tauri-plugin-autostart = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+active-win-pos-rs = "0.11"
+axum = "0.8"
+tower-http = { version = "0.6", features = ["cors"] }
+sysinfo = "0.39.6"
+tauri-plugin-single-instance = "2"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

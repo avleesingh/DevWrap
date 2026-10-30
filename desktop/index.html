@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevWrap Desktop Companion</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div class="app-layout">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-brand">
+          <div class="brand-icon">⚡</div>
+          <div>
+            <h1>DevWrap Desktop Companion</h1>
+            <p class="subtitle">Local Telemetry Engine & Window Poller</p>
+          </div>
+        </div>
+        <div class="status-badge" id="daemon-status-badge">
+          <span class="status-dot"></span>
+          <span id="daemon-status-label">Daemon Live: 127.0.0.1:8080</span>
+        </div>
+      </header>
+
+      <!-- Key Metrics & Services Status -->
+      <div class="grid-cards">
+        <div class="card">
+          <div class="card-title">Local Axum Server</div>
+          <div class="card-val" id="server-status">127.0.0.1:8080</div>
+          <div class="card-sub">CORS enabled for Chrome Extension</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Window Poller</div>
+          <div class="card-val text-emerald">15s Active Loop</div>
+          <div class="card-sub">active-win-pos-rs v0.11</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Heartbeats Logged</div>
+          <div class="card-val" id="heartbeat-count">0</div>
+          <div class="card-sub">In-Memory Local Telemetry</div>
+        </div>
+      </div>
+
+      <!-- Dynamic Inclusion Filter Tags -->
+      <div class="filter-section">
+        <div class="filter-header">
+          <div class="section-title">ACTIVE WINDOW MONITORED TOOLS</div>
+          <span class="filter-count-badge" id="filter-count">Loading...</span>
+        </div>
+        <div class="tag-list-wrapper">
+          <div class="tag-list" id="filter-tag-list">
+            <span class="tag-pill">Loading filters...</span>
+          </div>
+
+          <!-- Process Search Autocomplete Combobox -->
+          <div class="combobox-wrapper" id="combobox-wrapper">
+            <form id="add-filter-form" class="add-filter-badge" autocomplete="off">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                id="add-filter-input"
+                class="add-filter-input"
+                placeholder="Search running apps (e.g. VS Code, Antigravity) or type custom name..."
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button type="submit" id="add-filter-btn" class="add-filter-btn">+ Add Filter</button>
+            </form>
+            <div id="process-dropdown" class="process-dropdown hidden">
+              <!-- Dynamically populated process recommendations -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Endpoints & Actions -->
+      <div class="endpoints-box">
+        <div class="endpoints-header">
+          <span class="section-title">LOCAL API ENDPOINTS</span>
+          <button id="test-health-btn" class="btn-sm">Test GET /health</button>
+        </div>
+        <div class="endpoint-row">
+          <span class="method">GET</span>
+          <code class="url">http://127.0.0.1:8080/health</code>
+          <span class="desc">Health check ping for Chrome Extension</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method">GET</span>
+          <code class="url">http://127.0.0.1:8080/stats</code>
+          <span class="desc">JSON array of recorded desktop app heartbeats</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method">GET/POST/DEL</span>
+          <code class="url">http://127.0.0.1:8080/filters</code>
+          <span class="desc">Dynamic process filters watchlist (REST API)</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method">GET</span>
+          <code class="url">http://127.0.0.1:8080/processes</code>
+          <span class="desc">Live running system applications & window titles</span>
+        </div>
+      </div>
+
+      <!-- Live Heartbeats Log Table -->
+      <div class="log-section">
+        <div class="section-title">RECENT TELEMETRY HEARTBEATS</div>
+        <div class="table-container">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>App Name</th>
+                <th>Filter</th>
+                <th>Window Title</th>
+                <th>PID</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="heartbeat-rows">
+              <tr>
+                <td colspan="5" class="empty-cell">Waiting for active developer window detection...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

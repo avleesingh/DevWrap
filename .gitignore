@@ -1,0 +1,12 @@
+# JavaScript dependencies and generated frontend assets
+node_modules/
+desktop/node_modules/
+desktop/dist/
+
+# Rust build products and distributable installers
+desktop/src-tauri/target/
+*.dmg
+
+# Local editor and operating-system files
+.DS_Store
+.vscode/
