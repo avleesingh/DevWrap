@@ -107,12 +107,9 @@ const onboardingPairingDot = document.getElementById('onboardingPairingDot');
 const onboardingPairingStatus = document.getElementById('onboardingPairingStatus');
 const onboardingPairingSubtext = document.getElementById('onboardingPairingSubtext');
 
-// Set this to the direct DMG asset URL from the project's GitHub Releases page
-// before publishing the extension, for example:
-// https://github.com/your-github-username/devwrap/releases/latest/download/DevWrap-Desktop-Companion-macos.dmg
-// Leave empty while developing: the Download buttons will show local setup steps
-// instead of opening a broken external link.
-const DESKTOP_COMPANION_DMG_URL = '';
+// Live release download URL for the Desktop Companion DMG
+const DOWNLOAD_URL = 'https://github.com/avleesingh/DevWrap/releases/download/v1.0.0/DevWrap.Desktop.Companion_0.1.0_aarch64.dmg';
+const DESKTOP_COMPANION_DMG_URL = DOWNLOAD_URL;
 
 // -------------------------------------------------------------
 // Utilities & Helpers
