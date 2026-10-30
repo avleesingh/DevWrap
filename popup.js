@@ -127,6 +127,23 @@ function normalizeDomain(input) {
   return domain;
 }
 
+// Helpers to get formatted date keys in local calendar time
+function getTodayKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`; // "YYYY-MM-DD"
+}
+
+function getDateKey(d) {
+  const dateObj = (d instanceof Date) ? d : new Date(d);
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getCurrentMonthKey() {
   const now = new Date();
   const year = now.getFullYear();
@@ -611,6 +628,7 @@ async function ingestDesktopStats() {
     }
 
     // Update usageData for monitored subscriptions
+    const today = getTodayKey();
     const month = getCurrentMonthKey();
     let hasChanges = false;
 
@@ -618,12 +636,15 @@ async function ingestDesktopStats() {
       const dom = normalizeDomain(sub.domain);
 
       // Aggregate desktop heartbeats matching custom process filters
-      // (case-insensitive substring match on process name and window title)
       let matchingSeconds = 0;
+      const dailyDesktop = {};
+
       heartbeats.forEach(hb => {
         const dur = Number(hb.duration_seconds) || 15;
         if (matchesSubscriptionHeartbeat(sub, hb)) {
           matchingSeconds += dur;
+          const hbDay = hb.timestamp ? getDateKey(new Date(hb.timestamp * 1000)) : today;
+          dailyDesktop[hbDay] = (dailyDesktop[hbDay] || 0) + dur;
         }
       });
 
@@ -635,9 +656,23 @@ async function ingestDesktopStats() {
           totalSeconds: 0,
           dailySeconds: {},
           monthlySeconds: {},
+          dailyWebSeconds: {},
+          dailyDesktopSeconds: {},
           lastActive: null
         };
       }
+
+      if (!usageData[dom].dailySeconds) usageData[dom].dailySeconds = {};
+      if (!usageData[dom].dailyWebSeconds) usageData[dom].dailyWebSeconds = {};
+      if (!usageData[dom].dailyDesktopSeconds) usageData[dom].dailyDesktopSeconds = {};
+      if (!usageData[dom].monthlySeconds) usageData[dom].monthlySeconds = {};
+
+      // Record daily desktop tracking and update combined daily totals
+      Object.entries(dailyDesktop).forEach(([dayKey, sec]) => {
+        usageData[dom].dailyDesktopSeconds[dayKey] = sec;
+        const webSec = usageData[dom].dailyWebSeconds[dayKey] || 0;
+        usageData[dom].dailySeconds[dayKey] = webSec + sec;
+      });
 
       const baseline = usageData[dom].baselineDesktopSeconds || 0;
       const newDesktopSeconds = baseline + matchingSeconds;
@@ -645,7 +680,6 @@ async function ingestDesktopStats() {
       if (usageData[dom].desktopSeconds !== newDesktopSeconds) {
         usageData[dom].desktopSeconds = newDesktopSeconds;
         usageData[dom].totalSeconds = (usageData[dom].webSeconds || 0) + newDesktopSeconds;
-        if (!usageData[dom].monthlySeconds) usageData[dom].monthlySeconds = {};
         usageData[dom].monthlySeconds[month] = usageData[dom].totalSeconds;
         hasChanges = true;
       }
@@ -665,27 +699,62 @@ async function ingestDesktopStats() {
 }
 
 // -------------------------------------------------------------
-// Unified Telemetry Calculations (Web + Desktop)
+// -------------------------------------------------------------
+// Daily vs Combined Monthly Telemetry Calculations
 // -------------------------------------------------------------
 
 /**
- * Calculates unified active seconds for a subscription across Web and Desktop IDEs.
+ * Calculates active seconds spent TODAY on a subscription (Web + Desktop).
+ * Refreshes daily at 00:00 midnight so users only see today's tool usage in the daily view.
  */
-function getUnifiedSecondsForSub(sub) {
+function getTodaySecondsForSub(sub) {
+  const today = getTodayKey();
+  const dom = normalizeDomain(sub.domain);
+  const usage = usageData[dom];
+  if (!usage) return 0;
+
+  // 1. Direct dailySeconds for today
+  if (usage.dailySeconds && typeof usage.dailySeconds[today] === 'number') {
+    return usage.dailySeconds[today];
+  }
+
+  // 2. Sum of dailyWebSeconds and dailyDesktopSeconds for today
+  const webToday = usage.dailyWebSeconds?.[today] || 0;
+  const desktopToday = usage.dailyDesktopSeconds?.[today] || 0;
+  if (webToday > 0 || desktopToday > 0) {
+    return webToday + desktopToday;
+  }
+
+  return 0;
+}
+
+/**
+ * Calculates unified active seconds across the current month for Dev Wrapped.
+ * Used exclusively on Global Drop Day / Wrapped view to reveal combined monthly time.
+ */
+function getMonthlyCombinedSecondsForSub(sub) {
   const currentMonth = getCurrentMonthKey();
   const dom = normalizeDomain(sub.domain);
   const usage = usageData[dom];
-
   if (!usage) return 0;
 
-  // If explicit desktopSeconds or webSeconds exist, sum them
-  if (usage.desktopSeconds !== undefined || usage.webSeconds !== undefined) {
-    return (usage.webSeconds || 0) + (usage.desktopSeconds || 0);
+  let webSec = 0;
+  let desktopSec = 0;
+
+  if (sub.type === 'desktop') {
+    desktopSec = usage.desktopSeconds !== undefined ? usage.desktopSeconds : (usage.totalSeconds || 0);
+    webSec = usage.webSeconds || 0;
+  } else {
+    webSec = usage.webSeconds !== undefined ? usage.webSeconds : (usage.monthlySeconds?.[currentMonth] ?? usage.totalSeconds ?? 0);
+    desktopSec = usage.desktopSeconds || 0;
   }
 
-  return usage.monthlySeconds?.[currentMonth] !== undefined
-    ? usage.monthlySeconds[currentMonth]
-    : (usage.totalSeconds || 0);
+  return webSec + desktopSec;
+}
+
+// Alias for backwards compatibility where monthly combined is required
+function getUnifiedSecondsForSub(sub) {
+  return getMonthlyCombinedSecondsForSub(sub);
 }
 
 // -------------------------------------------------------------
@@ -759,33 +828,39 @@ function renderLiveStatus() {
 }
 
 /**
- * Computes & Renders Summary Metrics (Total Spend, Total Hours, Avg ROI)
+ * Computes & Renders Summary Metrics (Total Spend, Today's Hours, Daily Refresh status)
  */
 function renderSummaryHeader() {
   let totalMonthlySpend = 0;
-  let totalTrackedSeconds = 0;
+  let totalTodaySeconds = 0;
 
   subscriptions.forEach(sub => {
     totalMonthlySpend += Number(sub.monthlyCost) || 0;
-    totalTrackedSeconds += getUnifiedSecondsForSub(sub);
+    totalTodaySeconds += getTodaySecondsForSub(sub);
   });
 
-  const totalTrackedHours = totalTrackedSeconds / 3600;
+  const totalTodayHours = totalTodaySeconds / 3600;
 
   totalSpendEl.textContent = `$${totalMonthlySpend.toFixed(2)}`;
   subCountEl.textContent = `${subscriptions.length} subscription${subscriptions.length === 1 ? '' : 's'}`;
-  totalHoursEl.textContent = `${totalTrackedHours.toFixed(1)} hrs`;
 
-  if (totalTrackedHours > 0) {
-    const avgRate = totalMonthlySpend / totalTrackedHours;
-    avgCostPerHourEl.textContent = `Avg $${avgRate.toFixed(2)}/hr`;
+  // Format today's active time cleanly
+  if (totalTodaySeconds >= 3600) {
+    const hrs = Math.floor(totalTodaySeconds / 3600);
+    const mins = Math.floor((totalTodaySeconds % 3600) / 60);
+    totalHoursEl.textContent = mins > 0 ? `${hrs}h ${mins}m` : `${hrs} hrs`;
+  } else if (totalTodaySeconds > 0) {
+    const mins = Math.floor(totalTodaySeconds / 60);
+    totalHoursEl.textContent = `${mins}m today`;
   } else {
-    avgCostPerHourEl.textContent = 'Avg $0.00/hr';
+    totalHoursEl.textContent = '0m today';
   }
+
+  avgCostPerHourEl.innerHTML = `<span class="text-indigo-300 font-medium">Refreshes daily</span> • <span class="text-slate-400">Total in Wrapped 🔒</span>`;
 }
 
 /**
- * Renders Subscriptions List Cards & Filter State
+ * Renders Subscriptions List Cards & Filter State (Daily View)
  */
 function renderSubscriptionsList() {
   subListEl.innerHTML = '';
@@ -804,17 +879,20 @@ function renderSubscriptionsList() {
   const filteredSubs = subscriptions.filter(sub => {
     if (currentFilter === 'all') return true;
 
-    const seconds = getUnifiedSecondsForSub(sub);
-    const hours = seconds / 3600;
-    const roi = getRoiEvaluation(sub.monthlyCost, hours);
-
-    return roi.category === currentFilter;
+    const todaySec = getTodaySecondsForSub(sub);
+    if (currentFilter === 'high') {
+      return todaySec > 0;
+    }
+    if (currentFilter === 'waste') {
+      return todaySec === 0;
+    }
+    return true;
   });
 
   if (filteredSubs.length === 0) {
     subListEl.innerHTML = `
       <div class="card-glow rounded-xl p-4 text-center text-slate-400 text-xs">
-        No tools match the "${currentFilter === 'high' ? 'High ROI' : 'Waste Alert'}" filter.
+        No tools are "${currentFilter === 'high' ? 'Active Today' : 'Idle Today'}".
       </div>
     `;
     return;
@@ -822,9 +900,7 @@ function renderSubscriptionsList() {
 
   filteredSubs.forEach(sub => {
     const dom = normalizeDomain(sub.domain);
-    const totalSeconds = getUnifiedSecondsForSub(sub);
-    const hours = totalSeconds / 3600;
-    const roi = getRoiEvaluation(sub.monthlyCost, hours);
+    const todaySeconds = getTodaySecondsForSub(sub);
     const isActivelyTracking = activeSession && activeSession.domain === dom;
 
     const card = document.createElement('div');
@@ -834,17 +910,26 @@ function renderSubscriptionsList() {
     const toolIcon = getToolIcon(sub);
     const isDesktop = sub.type === 'desktop';
 
-    // 1. Display Minutes + Hours on Tracked Cards:
-    // - Calculate elapsed minutes and hours
-    // - If totalSeconds > 0, display formatted text as: `${mins}m (${hrs}h)` (e.g. "14m (0.2h)")
-    // - If totalSeconds === 0, display "No usage" (text-rose-400)
+    // Time tracked displayed for today (refreshed daily at 00:00 midnight)
     let trackedTimeHtml = '';
-    if (totalSeconds > 0) {
-      const mins = Math.floor(totalSeconds / 60);
-      const hrs = (totalSeconds / 3600).toFixed(1);
+    let statusBadge = '';
+
+    if (todaySeconds > 0) {
+      const mins = Math.floor(todaySeconds / 60);
+      const hrs = (todaySeconds / 3600).toFixed(1);
       trackedTimeHtml = `<div class="text-xs font-bold text-emerald-400">${mins}m (${hrs}h)</div>`;
+      statusBadge = `
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 border border-emerald-500/40 text-emerald-300">
+          ● Active Today
+        </span>
+      `;
     } else {
-      trackedTimeHtml = `<div class="text-xs font-bold text-rose-400">No usage</div>`;
+      trackedTimeHtml = `<div class="text-xs font-semibold text-slate-400">0m today</div>`;
+      statusBadge = `
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+          ● Refreshed Today
+        </span>
+      `;
     }
 
     card.innerHTML = `
@@ -865,9 +950,7 @@ function renderSubscriptionsList() {
           </div>
         </div>
         <div class="flex items-center gap-1.5">
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${roi.badgeClass}">
-            ● ${roi.label}
-          </span>
+          ${statusBadge}
           <button class="delete-btn text-slate-500 hover:text-rose-400 p-1 text-xs transition" data-id="${sub.id}" title="Remove tool">
             ✕
           </button>
@@ -876,16 +959,18 @@ function renderSubscriptionsList() {
 
       <div class="grid grid-cols-3 gap-2 bg-slate-900/60 rounded-lg p-2 border border-slate-800/80 text-center">
         <div>
-          <div class="text-[9px] text-slate-500 uppercase tracking-wider">Spend</div>
+          <div class="text-[9px] text-slate-500 uppercase tracking-wider">Plan</div>
           <div class="text-xs font-bold text-slate-200">$${Number(sub.monthlyCost).toFixed(2)}/mo</div>
         </div>
         <div>
-          <div class="text-[9px] text-slate-500 uppercase tracking-wider">Tracked Time</div>
+          <div class="text-[9px] text-slate-500 uppercase tracking-wider">Today</div>
           ${trackedTimeHtml}
         </div>
         <div>
-          <div class="text-[9px] text-slate-500 uppercase tracking-wider">Effective Cost</div>
-          <div class="text-xs font-bold ${roi.category === 'waste' ? 'text-rose-400' : 'text-indigo-300'}">${roi.costPerHourText}</div>
+          <div class="text-[9px] text-slate-500 uppercase tracking-wider">Combined ROI</div>
+          <div class="text-xs font-bold text-indigo-300 flex items-center justify-center gap-1" title="Combined total revealed at end of month">
+            <span>🔒</span> <span class="text-[10px]">In Wrapped</span>
+          </div>
         </div>
       </div>
     `;
@@ -1049,26 +1134,36 @@ if (startDownloadBtn) {
  */
 function getDropStatus() {
   const now = new Date();
-  const utcDay = now.getUTCDate();
-  const isUnlocked = simulateDropDay || (utcDay === 1);
 
-  // Upcoming month 1st day at 00:00:00 UTC
-  let targetYear = now.getUTCFullYear();
-  let targetMonth = now.getUTCMonth() + 1;
-  if (targetMonth > 11) {
-    targetMonth = 0;
-    targetYear++;
+  // Check if today is the last day of the month or 1st day of month (local time and UTC)
+  const tomorrowLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const isLastDayLocal = tomorrowLocal.getDate() === 1;
+  const isFirstDayLocal = now.getDate() === 1;
+
+  const tomorrowUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+  const isLastDayUtc = tomorrowUtc.getUTCDate() === 1;
+  const isFirstDayUtc = now.getUTCDate() === 1;
+
+  const isUnlocked = simulateDropDay || isLastDayLocal || isFirstDayLocal || isLastDayUtc || isFirstDayUtc;
+
+  // The countdown target: last day of the current month at 00:00:00
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  // Day 0 of next month is the last day of current month
+  let targetDropDate = new Date(year, month + 1, 0, 0, 0, 0, 0);
+
+  // If today is already on or past targetDropDate and unlocked, the next target is next month's last day
+  if (now.getTime() >= targetDropDate.getTime() && isUnlocked) {
+    targetDropDate = new Date(year, month + 2, 0, 0, 0, 0, 0);
   }
-  const nextDropDate = new Date(Date.UTC(targetYear, targetMonth, 1, 0, 0, 0, 0));
-  const diffMs = Math.max(0, nextDropDate.getTime() - now.getTime());
 
+  const diffMs = Math.max(0, targetDropDate.getTime() - now.getTime());
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
 
-  const monthName = now.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' }).toUpperCase();
-  const year = now.getUTCFullYear();
+  const monthName = now.toLocaleString('en-US', { month: 'long' }).toUpperCase();
 
   return {
     isUnlocked,
@@ -1102,7 +1197,7 @@ function updateDropCountdownUI() {
     lockedMonthBadge.textContent = `🔒 ${status.monthName} STACK WRAPPED LOCKED: ${status.days}d : ${pad(status.hours)}h : ${pad(status.minutes)}m`;
   }
   if (lockedBtnText) {
-    lockedBtnText.textContent = `🔒 Next Stack Wrapped Unlocks in ${shortCountdown}`;
+    lockedBtnText.textContent = `🔒 Combined Usage Drops on Last Day (${shortCountdown})`;
   }
   if (wrappedMonthTitle) {
     wrappedMonthTitle.textContent = `${status.monthName} ${status.year} DEV STACK WRAPPED`;

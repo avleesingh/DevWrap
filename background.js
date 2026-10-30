@@ -27,10 +27,21 @@ const COMPANION_FILTERS_URL = 'http://127.0.0.1:8080/filters';
 const COMPANION_POLL_INTERVAL_MS = 5000; // 5 seconds
 let isPollingCompanion = false;
 
-// Helper to get formatted date keys
+// Helper to get formatted date keys in local calendar time
 function getTodayKey() {
   const now = new Date();
-  return now.toISOString().split('T')[0]; // "YYYY-MM-DD"
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`; // "YYYY-MM-DD"
+}
+
+function getDateKey(d) {
+  const dateObj = (d instanceof Date) ? d : new Date(d);
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function getCurrentMonthKey() {
@@ -154,16 +165,24 @@ async function commitCurrentSession() {
         totalSeconds: 0,
         dailySeconds: {},
         monthlySeconds: {},
+        dailyWebSeconds: {},
+        dailyDesktopSeconds: {},
         lastActive: now
       };
     }
 
     if (!usageData[domain].dailySeconds) usageData[domain].dailySeconds = {};
+    if (!usageData[domain].dailyWebSeconds) usageData[domain].dailyWebSeconds = {};
+    if (!usageData[domain].dailyDesktopSeconds) usageData[domain].dailyDesktopSeconds = {};
     if (!usageData[domain].monthlySeconds) usageData[domain].monthlySeconds = {};
 
     usageData[domain].webSeconds = (usageData[domain].webSeconds || 0) + elapsedSeconds;
     usageData[domain].totalSeconds = (usageData[domain].totalSeconds || 0) + elapsedSeconds;
-    usageData[domain].dailySeconds[today] = (usageData[domain].dailySeconds[today] || 0) + elapsedSeconds;
+    usageData[domain].dailyWebSeconds[today] = (usageData[domain].dailyWebSeconds[today] || 0) + elapsedSeconds;
+
+    const desktopToday = usageData[domain].dailyDesktopSeconds[today] || 0;
+    usageData[domain].dailySeconds[today] = (usageData[domain].dailyWebSeconds[today] || 0) + desktopToday;
+
     usageData[domain].monthlySeconds[month] = (usageData[domain].monthlySeconds[month] || 0) + elapsedSeconds;
     usageData[domain].lastActive = now;
 
@@ -395,6 +414,7 @@ async function ingestDesktopStats() {
     const stored = await chrome.storage.local.get(['subscriptions', 'usageData']);
     const subscriptions = stored.subscriptions || [];
     const usageData = stored.usageData || {};
+    const today = getTodayKey();
     const month = getCurrentMonthKey();
     let hasChanges = false;
 
@@ -402,12 +422,15 @@ async function ingestDesktopStats() {
       const dom = normalizeDomain(sub.domain);
 
       // Aggregate desktop heartbeats matching custom process filters
-      // (case-insensitive substring match on process name and window title)
       let matchingSeconds = 0;
+      const dailyDesktop = {};
+
       heartbeats.forEach(hb => {
         const dur = Number(hb.duration_seconds) || 15;
         if (matchesSubscriptionHeartbeat(sub, hb)) {
           matchingSeconds += dur;
+          const hbDay = hb.timestamp ? getDateKey(new Date(hb.timestamp * 1000)) : today;
+          dailyDesktop[hbDay] = (dailyDesktop[hbDay] || 0) + dur;
         }
       });
 
@@ -419,9 +442,23 @@ async function ingestDesktopStats() {
           totalSeconds: 0,
           dailySeconds: {},
           monthlySeconds: {},
+          dailyWebSeconds: {},
+          dailyDesktopSeconds: {},
           lastActive: null
         };
       }
+
+      if (!usageData[dom].dailySeconds) usageData[dom].dailySeconds = {};
+      if (!usageData[dom].dailyWebSeconds) usageData[dom].dailyWebSeconds = {};
+      if (!usageData[dom].dailyDesktopSeconds) usageData[dom].dailyDesktopSeconds = {};
+      if (!usageData[dom].monthlySeconds) usageData[dom].monthlySeconds = {};
+
+      // Record daily desktop tracking and update combined daily totals
+      Object.entries(dailyDesktop).forEach(([dayKey, sec]) => {
+        usageData[dom].dailyDesktopSeconds[dayKey] = sec;
+        const webSec = usageData[dom].dailyWebSeconds[dayKey] || 0;
+        usageData[dom].dailySeconds[dayKey] = webSec + sec;
+      });
 
       const baseline = usageData[dom].baselineDesktopSeconds || 0;
       const newDesktopSeconds = baseline + matchingSeconds;
@@ -429,7 +466,6 @@ async function ingestDesktopStats() {
       if (usageData[dom].desktopSeconds !== newDesktopSeconds) {
         usageData[dom].desktopSeconds = newDesktopSeconds;
         usageData[dom].totalSeconds = (usageData[dom].webSeconds || 0) + newDesktopSeconds;
-        if (!usageData[dom].monthlySeconds) usageData[dom].monthlySeconds = {};
         usageData[dom].monthlySeconds[month] = usageData[dom].totalSeconds;
         hasChanges = true;
       }
@@ -496,11 +532,13 @@ function triggerMonthlyReportNotification() {
 async function checkMonthlyDropStatus() {
   try {
     const now = new Date();
-    const utcDay = now.getUTCDate();
-    const currentMonthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const isLastDay = tomorrow.getDate() === 1;
+    const isFirstDay = now.getDate() === 1;
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     const stored = await chrome.storage.local.get(['simulateDropDay', 'lastDropNotifiedMonth']);
-    const isDropDay = !!stored.simulateDropDay || (utcDay === 1);
+    const isDropDay = !!stored.simulateDropDay || isLastDay || isFirstDay;
 
     if (isDropDay) {
       if (chrome.action && chrome.action.setBadgeText) {

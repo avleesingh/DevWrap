@@ -168,11 +168,11 @@
 
         <div class="card-glow rounded-xl p-3">
           <div class="text-xs text-slate-400 mb-1 flex items-center justify-between">
-            <span>Tracked Time</span>
+            <span>Today's Tracked Time</span>
             <span class="text-emerald-400">⏱️</span>
           </div>
-          <div id="totalHours" class="text-xl font-bold text-white">0.0 hrs</div>
-          <div id="avgCostPerHour" class="text-[11px] text-slate-400 mt-0.5">Avg $0.00/hr</div>
+          <div id="totalHours" class="text-xl font-bold text-white">0m today</div>
+          <div id="avgCostPerHour" class="text-[11px] text-slate-400 mt-0.5">Refreshes daily • Total in Wrapped 🔒</div>
         </div>
       </div>
 
@@ -278,8 +278,8 @@
           <h2 class="text-xs font-semibold text-slate-300">TRACKED DEV STACK</h2>
           <div class="flex gap-1" id="filterContainer">
             <button class="filter-btn px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700 font-medium" data-filter="all">All</button>
-            <button class="filter-btn px-2 py-0.5 rounded text-[10px] text-slate-400 hover:text-white" data-filter="high">High ROI</button>
-            <button class="filter-btn px-2 py-0.5 rounded text-[10px] text-slate-400 hover:text-white" data-filter="waste">Waste Alert</button>
+            <button class="filter-btn px-2 py-0.5 rounded text-[10px] text-slate-400 hover:text-white" data-filter="high">Active Today</button>
+            <button class="filter-btn px-2 py-0.5 rounded text-[10px] text-slate-400 hover:text-white" data-filter="waste">Idle Today</button>
           </div>
         </div>
 
@@ -312,14 +312,14 @@
         </div>
 
         <div class="flex items-center justify-between bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/80 mb-2">
-          <span class="text-[11px] text-slate-400">Next Global Drop In:</span>
+          <span class="text-[11px] text-slate-400">Month-End Drop In:</span>
           <span id="countdownClock" class="font-mono text-xs font-bold text-amber-300 tracking-wider">
             --d : --h : --m : --s
           </span>
         </div>
 
         <button type="button" id="lockedActionBtn" class="w-full py-2 px-3 rounded-lg bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 text-[11px] font-semibold text-slate-300 flex items-center justify-center gap-2 transition cursor-pointer">
-          <span id="lockedBtnText">🔒 Next Stack Wrapped Unlocks in --d --h</span>
+          <span id="lockedBtnText">🔒 Combined Usage Drops on Last Day (--d --h)</span>
         </button>
       </div>
 
@@ -434,8 +434,8 @@
             🔒
           </div>
           <div>
-            <div class="text-xs font-bold text-white uppercase tracking-wider">Local Data Privacy Shield Active</div>
-            <div class="text-[11px] text-slate-400 mt-1">Raw monthly stack totals and specific hourly rates are hidden until Global Drop Day.</div>
+            <div class="text-xs font-bold text-white uppercase tracking-wider">Combined Telemetry Locked Until Month-End</div>
+            <div class="text-[11px] text-slate-400 mt-1">Usage is refreshed every day so you only see today's tool time. Your combined monthly usage, stack secrets, and developer persona unlock on the last day of the month!</div>
           </div>
 
           <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 text-left font-mono text-[11px] text-slate-400 space-y-1">
