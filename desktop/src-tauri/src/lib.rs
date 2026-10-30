@@ -571,6 +571,9 @@ pub fn run() {
             // logins without asking the user to run a terminal command.
             #[cfg(target_os = "macos")]
             {
+                // Run silently as an accessory menu-bar app (hide from Dock and CMD+Tab)
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
                 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
                 app.handle().plugin(tauri_plugin_autostart::init(
