@@ -766,6 +766,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           'desktopStats',
           'desktopHeartbeats',
           'simulateDropDay',
+          'forceLocked',
           'onboardingCompleted'
         ]);
         
@@ -789,6 +790,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           desktopStats: data.desktopStats || {},
           desktopHeartbeats: data.desktopHeartbeats || [],
           simulateDropDay: !!data.simulateDropDay,
+          forceLocked: !!data.forceLocked,
           onboardingCompleted: !!data.onboardingCompleted,
           activeSession: currentSession ? {
             domain: currentSession.domain,

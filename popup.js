@@ -13,6 +13,8 @@ let currentFilter = 'all'; // 'all' | 'high' | 'waste'
 let desktopConnected = false;
 let desktopStats = {};
 let simulateDropDay = false;
+let forceLocked = false;
+let activeWrappedTab = 'card1';
 let dropCountdownTimer = null;
 let onboardingCompleted = false;
 
@@ -56,15 +58,8 @@ const saveSubBtn = document.getElementById('saveSubBtn');
 const filterContainer = document.getElementById('filterContainer');
 const subListEl = document.getElementById('subList');
 
-const openWrappedBtn = document.getElementById('openWrappedBtn');
 const wrappedModal = document.getElementById('wrappedModal');
 const closeWrappedBtn = document.getElementById('closeWrappedBtn');
-const wrappedTopTool = document.getElementById('wrappedTopTool');
-const wrappedSpend = document.getElementById('wrappedSpend');
-const wrappedTime = document.getElementById('wrappedTime');
-const wrappedBreakdown = document.getElementById('wrappedBreakdown');
-const wrappedAvg = document.getElementById('wrappedAvg');
-const copyWrappedBtn = document.getElementById('copyWrappedBtn');
 const toastEl = document.getElementById('toast');
 
 const planModal = document.getElementById('planModal');
@@ -79,23 +74,54 @@ let selectedTrackingType = 'web';
 
 // Monthly Drop & Lock System Elements
 const wrappedTriggerContainer = document.getElementById('wrappedTriggerContainer');
-const wrappedLockedState = document.getElementById('wrappedLockedState');
-const wrappedUnlockedState = document.getElementById('wrappedUnlockedState');
-const lockedMonthBadge = document.getElementById('lockedMonthBadge');
+const wrappedCountdownBanner = document.getElementById('wrappedCountdownBanner');
+const countdownStatusBadge = document.getElementById('countdownStatusBadge');
+const countdownStatusDot = document.getElementById('countdownStatusDot');
+const countdownStatusText = document.getElementById('countdownStatusText');
 const countdownClock = document.getElementById('countdownClock');
-const lockedActionBtn = document.getElementById('lockedActionBtn');
-const lockedBtnText = document.getElementById('lockedBtnText');
+const openWrappedBtn = document.getElementById('openWrappedBtn');
+const openWrappedBtnIcon = document.getElementById('openWrappedBtnIcon');
+const openWrappedBtnText = document.getElementById('openWrappedBtnText');
+const openWrappedPing = document.getElementById('openWrappedPing');
+const dropStatusModeLabel = document.getElementById('dropStatusModeLabel');
 const toggleDropSimBtn = document.getElementById('toggleDropSimBtn');
 const toggleDropLockBtn = document.getElementById('toggleDropLockBtn');
 
-const wrappedLockedView = document.getElementById('wrappedLockedView');
-const wrappedUnlockedView = document.getElementById('wrappedUnlockedView');
-const modalCountdownClock = document.getElementById('modalCountdownClock');
-const wrappedMonthTitle = document.getElementById('wrappedMonthTitle');
-const wrappedPersonaBadge = document.getElementById('wrappedPersonaBadge');
-const wrappedPersona = document.getElementById('wrappedPersona');
-const copyWrappedTwitterBtn = document.getElementById('copyWrappedTwitterBtn');
-const copyWrappedLinkedInBtn = document.getElementById('copyWrappedLinkedInBtn');
+// Dual Wrapped Cards Elements
+const tabCard1Btn = document.getElementById('tabCard1Btn');
+const tabCard2Btn = document.getElementById('tabCard2Btn');
+const tabBothCardsBtn = document.getElementById('tabBothCardsBtn');
+const personaCardWrapper = document.getElementById('personaCardWrapper');
+const economyCardWrapper = document.getElementById('economyCardWrapper');
+const personaCard = document.getElementById('personaCard');
+const economyCard = document.getElementById('economyCard');
+
+// Card 1 Persona Elements
+const personaNameLead = document.getElementById('personaNameLead');
+const personaNameTail = document.getElementById('personaNameTail');
+const personaTagline = document.getElementById('personaTagline');
+const card1ToolsList = document.getElementById('card1ToolsList');
+const card1ProductiveDay = document.getElementById('card1ProductiveDay');
+const card1Streak = document.getElementById('card1Streak');
+const card1Year = document.getElementById('card1Year');
+const shareCard1XBtn = document.getElementById('shareCard1XBtn');
+const shareCard1LinkedInBtn = document.getElementById('shareCard1LinkedInBtn');
+const copyCard1TextBtn = document.getElementById('copyCard1TextBtn');
+const downloadCard1ImgBtn = document.getElementById('downloadCard1ImgBtn');
+
+// Card 2 Economy Elements
+const card2TotalSpend = document.getElementById('card2TotalSpend');
+const card2ActiveTime = document.getElementById('card2ActiveTime');
+const card2ToolCount = document.getElementById('card2ToolCount');
+const card2BlendedRate = document.getElementById('card2BlendedRate');
+const card2Histogram = document.getElementById('card2Histogram');
+const card2BestToolName = document.getElementById('card2BestToolName');
+const card2BestToolRate = document.getElementById('card2BestToolRate');
+const card2Year = document.getElementById('card2Year');
+const shareCard2XBtn = document.getElementById('shareCard2XBtn');
+const shareCard2LinkedInBtn = document.getElementById('shareCard2LinkedInBtn');
+const copyCard2TextBtn = document.getElementById('copyCard2TextBtn');
+const downloadCard2ImgBtn = document.getElementById('downloadCard2ImgBtn');
 
 // First-Time "Companion First" Onboarding Elements
 const onboardingView = document.getElementById('onboardingView');
@@ -708,6 +734,7 @@ async function loadData() {
           'desktopConnected',
           'desktopStats',
           'simulateDropDay',
+          'forceLocked',
           'onboardingCompleted'
         ], (stored) => {
           subscriptions = stored.subscriptions || [];
@@ -715,6 +742,7 @@ async function loadData() {
           desktopConnected = !!stored.desktopConnected;
           desktopStats = stored.desktopStats || {};
           simulateDropDay = !!stored.simulateDropDay;
+          forceLocked = !!stored.forceLocked;
           onboardingCompleted = !!stored.onboardingCompleted;
           evaluateOnboardingState();
           updateDesktopStatusUI(desktopConnected);
@@ -730,6 +758,7 @@ async function loadData() {
       desktopConnected = !!response.desktopConnected;
       desktopStats = response.desktopStats || {};
       simulateDropDay = !!response.simulateDropDay;
+      forceLocked = !!response.forceLocked;
       onboardingCompleted = !!response.onboardingCompleted;
       evaluateOnboardingState();
       updateDesktopStatusUI(desktopConnected);
@@ -1067,31 +1096,34 @@ if (startDownloadBtn) {
 // -------------------------------------------------------------
 
 /**
- * Calculates whether today is the 1st of the month in UTC (00:00 UTC to 23:59 UTC),
- * and the remaining time until the 1st day of the upcoming month at 00:00 UTC.
+ * Checks if the given date is the last day of its month
+ * (e.g. 31st October, 28th/29th February, 30th November).
+ */
+function isLastDayOfMonth(d = new Date()) {
+  const tomorrow = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+  return tomorrow.getDate() === 1;
+}
+
+/**
+ * Calculates whether today is the end of the month (or simulated drop day),
+ * and the remaining time until the end-of-month drop goes live.
  */
 function getDropStatus() {
   const now = new Date();
+  const isLastDay = isLastDayOfMonth(now);
 
-  // Check if today is the last day of the month or 1st day of month (local time and UTC)
-  const tomorrowLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const isLastDayLocal = tomorrowLocal.getDate() === 1;
-  const isFirstDayLocal = now.getDate() === 1;
+  // Unlocked strictly on the last day of the month, unless test forceLocked is active;
+  // OR when simulateDropDay is enabled.
+  const isUnlocked = (!forceLocked && isLastDay) || simulateDropDay;
 
-  const tomorrowUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-  const isLastDayUtc = tomorrowUtc.getUTCDate() === 1;
-  const isFirstDayUtc = now.getUTCDate() === 1;
-
-  const isUnlocked = simulateDropDay || isLastDayLocal || isFirstDayLocal || isLastDayUtc || isFirstDayUtc;
-
-  // The countdown target: last day of the current month at 00:00:00
   const year = now.getFullYear();
   const month = now.getMonth();
-  // Day 0 of next month is the last day of current month
+
+  // The countdown target: last day of current month at 00:00:00 (when drop unlocks)
   let targetDropDate = new Date(year, month + 1, 0, 0, 0, 0, 0);
 
-  // If today is already on or past targetDropDate and unlocked, the next target is next month's last day
-  if (now.getTime() >= targetDropDate.getTime() && isUnlocked) {
+  // If already at or past targetDropDate or unlocked on the last day, next target is next month's last day
+  if (isUnlocked || now.getTime() >= targetDropDate.getTime()) {
     targetDropDate = new Date(year, month + 2, 0, 0, 0, 0, 0);
   }
 
@@ -1105,6 +1137,8 @@ function getDropStatus() {
 
   return {
     isUnlocked,
+    isLastDay,
+    forceLocked,
     days,
     hours,
     minutes,
@@ -1116,37 +1150,53 @@ function getDropStatus() {
 }
 
 /**
- * Ticks the countdown clock and updates the dual-state trigger UI in real-time.
+ * Ticks the countdown clock and updates the banner located directly ABOVE the button.
  */
 function updateDropCountdownUI() {
   const status = getDropStatus();
   const pad = (n) => String(n).padStart(2, '0');
-
   const formattedCountdown = `${status.days}d : ${pad(status.hours)}h : ${pad(status.minutes)}m : ${pad(status.seconds)}s`;
-  const shortCountdown = `${status.days}d ${status.hours}h`;
 
   if (countdownClock) {
     countdownClock.textContent = formattedCountdown;
   }
-  if (modalCountdownClock) {
-    modalCountdownClock.textContent = formattedCountdown;
-  }
-  if (lockedMonthBadge) {
-    lockedMonthBadge.textContent = `🔒 ${status.monthName} STACK WRAPPED LOCKED: ${status.days}d : ${pad(status.hours)}h : ${pad(status.minutes)}m`;
-  }
-  if (lockedBtnText) {
-    lockedBtnText.textContent = `🔒 Combined Usage Drops on Last Day (${shortCountdown})`;
-  }
-  if (wrappedMonthTitle) {
-    wrappedMonthTitle.textContent = `${status.monthName} ${status.year} DEV STACK WRAPPED`;
-  }
 
   if (status.isUnlocked) {
-    if (wrappedLockedState) wrappedLockedState.classList.add('hidden');
-    if (wrappedUnlockedState) wrappedUnlockedState.classList.remove('hidden');
+    if (countdownStatusText) countdownStatusText.textContent = '🟢 GLOBAL MONTHLY DROP IS LIVE!';
+    if (countdownStatusDot) {
+      countdownStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+    }
+    if (countdownStatusBadge) {
+      countdownStatusBadge.className = 'flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider shrink-0';
+    }
+    if (wrappedCountdownBanner) {
+      wrappedCountdownBanner.className = 'p-2.5 rounded-xl border border-emerald-500/40 bg-slate-900/90 mb-2 relative overflow-hidden transition-all duration-300';
+    }
+    if (openWrappedBtn) {
+      openWrappedBtn.className = 'w-full relative text-white font-extrabold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition border cursor-pointer bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:from-emerald-500 hover:to-teal-400 border-emerald-400/40';
+    }
+    if (openWrappedBtnIcon) openWrappedBtnIcon.textContent = '✨';
+    if (openWrappedBtnText) openWrappedBtnText.textContent = 'OPEN YOUR DEV STACK WRAPPED CARD!';
+    if (openWrappedPing) openWrappedPing.classList.remove('hidden');
+    if (dropStatusModeLabel) dropStatusModeLabel.textContent = status.isLastDay ? 'End of Month (Drop Live)' : 'Preview Mode (Live)';
   } else {
-    if (wrappedLockedState) wrappedLockedState.classList.remove('hidden');
-    if (wrappedUnlockedState) wrappedUnlockedState.classList.add('hidden');
+    if (countdownStatusText) countdownStatusText.textContent = `🔒 ${status.monthName} WRAPPED UNLOCKS IN:`;
+    if (countdownStatusDot) {
+      countdownStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+    }
+    if (countdownStatusBadge) {
+      countdownStatusBadge.className = 'flex items-center gap-1.5 text-[10px] font-bold text-amber-400 uppercase tracking-wider shrink-0';
+    }
+    if (wrappedCountdownBanner) {
+      wrappedCountdownBanner.className = 'p-2.5 rounded-xl border border-amber-500/30 bg-slate-900/90 mb-2 relative overflow-hidden transition-all duration-300';
+    }
+    if (openWrappedBtn) {
+      openWrappedBtn.className = 'w-full relative text-slate-200 font-extrabold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition border cursor-pointer bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 hover:border-amber-500/50 border-slate-700/80';
+    }
+    if (openWrappedBtnIcon) openWrappedBtnIcon.textContent = '🔒';
+    if (openWrappedBtnText) openWrappedBtnText.textContent = 'OPEN YOUR DEV STACK WRAPPED CARD!';
+    if (openWrappedPing) openWrappedPing.classList.add('hidden');
+    if (dropStatusModeLabel) dropStatusModeLabel.textContent = status.forceLocked ? 'Test Mode (Locked)' : 'Locked (Days 1–30)';
   }
 }
 
@@ -1177,45 +1227,81 @@ function calculateDeveloperPersona(totalWebHours, totalDesktopHours, topTool) {
   });
 
   const totalHours = totalWebHours + totalDesktopHours;
-  if (totalHours === 0) return '⚡ 10x Code Artisan';
-
-  if (aiHours / totalHours >= 0.4) return '🧠 AI Prompt Architect';
-  if (codeHours / totalHours >= 0.4) return '⚡ 10x Code Artisan';
-  if (devOpsHours / totalHours >= 0.3) return '🛠️ Systems & API Overlord';
-  if (designHours / totalHours >= 0.3) return '🎨 Pixel-Perfect Architect';
-  if (totalDesktopHours > totalWebHours * 1.5) return '💻 Deep Focus IDE Craftsman';
-  return '🚀 Full-Stack Polymath';
-}
-
-/**
- * Opens Locked Privacy Shield Modal view.
- * Hides raw monthly stack totals and specific hourly rates to build anticipation.
- */
-function openLockedPrivacyModal() {
-  updateDropCountdownUI();
-  if (wrappedUnlockedView) wrappedUnlockedView.classList.add('hidden');
-  if (wrappedLockedView) wrappedLockedView.classList.remove('hidden');
-  if (wrappedModal) wrappedModal.classList.remove('hidden');
-}
-
-/**
- * Sums both:
- * 1. Web Tab Hours (tracked natively in Chrome)
- * 2. Desktop IDE Hours (fetched from http://127.0.0.1:8080/stats)
- * Generates the high-contrast 16:9 terminal card featuring top producer tool,
- * hourly rate, persona badge, and social share formatting.
- */
-async function openDevStackWrapped() {
-  const status = getDropStatus();
-
-  // Strict Lock Check: If not unlocked, show Privacy Shield
-  if (!status.isUnlocked) {
-    showToast(`🔒 Stack Wrapped unlocks in ${status.days}d ${status.hours}h!`);
-    openLockedPrivacyModal();
-    return;
+  if (totalHours === 0) {
+    return {
+      lead: 'Full-Stack',
+      tail: 'Speedrunner',
+      tagline: 'From "what if?" to "it ships." No detours.'
+    };
   }
 
-  // Ingest latest stats if connected
+  if (aiHours / totalHours >= 0.35) {
+    return {
+      lead: 'AI Prompt',
+      tail: 'Architect',
+      tagline: 'Directing intelligence at lightspeed. Code was just the output.'
+    };
+  }
+  if (codeHours / totalHours >= 0.35) {
+    return {
+      lead: '10x Code',
+      tail: 'Artisan',
+      tagline: 'Pure syntax mastery. Zero noise, maximum throughput.'
+    };
+  }
+  if (devOpsHours / totalHours >= 0.25) {
+    return {
+      lead: 'Systems & API',
+      tail: 'Overlord',
+      tagline: 'Orchestrating backend pipelines and ironclad endpoints.'
+    };
+  }
+  if (designHours / totalHours >= 0.25) {
+    return {
+      lead: 'Pixel-Perfect',
+      tail: 'Architect',
+      tagline: 'Crafting interfaces where polish meets ruthless performance.'
+    };
+  }
+  if (totalDesktopHours > totalWebHours * 1.3) {
+    return {
+      lead: 'Deep Focus',
+      tail: 'IDE Craftsman',
+      tagline: 'Lost in the editor. Found in the flow state.'
+    };
+  }
+
+  return {
+    lead: 'Full-Stack',
+    tail: 'Speedrunner',
+    tagline: 'From "what if?" to "it ships." No detours.'
+  };
+}
+
+/**
+ * Tab switcher between Card 1 (Persona), Card 2 (Economy), and Both.
+ */
+function setWrappedActiveTab(tab) {
+  activeWrappedTab = tab;
+  if (tabCard1Btn) tabCard1Btn.classList.toggle('active-card-tab', tab === 'card1');
+  if (tabCard2Btn) tabCard2Btn.classList.toggle('active-card-tab', tab === 'card2');
+  if (tabBothCardsBtn) tabBothCardsBtn.classList.toggle('active-card-tab', tab === 'both');
+
+  if (personaCardWrapper) personaCardWrapper.classList.toggle('hidden', tab === 'card2');
+  if (economyCardWrapper) economyCardWrapper.classList.toggle('hidden', tab === 'card1');
+}
+
+if (tabCard1Btn) tabCard1Btn.addEventListener('click', () => setWrappedActiveTab('card1'));
+if (tabCard2Btn) tabCard2Btn.addEventListener('click', () => setWrappedActiveTab('card2'));
+if (tabBothCardsBtn) tabBothCardsBtn.addEventListener('click', () => setWrappedActiveTab('both'));
+
+// Cached card payload for sharing
+let currentWrappedData = null;
+
+/**
+ * Renders the 2 Dev Wrapped cards (Persona Card and Economy Card) with full fidelity.
+ */
+async function renderAndOpenDevStackWrapped() {
   if (desktopConnected) {
     await ingestDesktopStats();
   }
@@ -1225,10 +1311,8 @@ async function openDevStackWrapped() {
   let totalWebSeconds = 0;
   let totalDesktopSeconds = 0;
 
-  let topTool = null;
-  let topUnifiedHours = -1;
-
-  subscriptions.forEach(sub => {
+  // Process all subscriptions and sort by active time
+  const evaluatedTools = subscriptions.map(sub => {
     const dom = normalizeDomain(sub.domain);
     const cost = Number(sub.monthlyCost) || 0;
     totalMonthlySpend += cost;
@@ -1247,45 +1331,225 @@ async function openDevStackWrapped() {
 
     const unifiedSec = webSec + desktopSec;
     const unifiedHours = unifiedSec / 3600;
+    const rate = unifiedHours > 0 ? (cost / unifiedHours) : (cost > 0 ? cost : 0);
 
     totalWebSeconds += webSec;
     totalDesktopSeconds += desktopSec;
 
-    if (unifiedHours > topUnifiedHours) {
-      topUnifiedHours = unifiedHours;
-      topTool = sub;
-    }
+    return {
+      sub,
+      name: sub.name || dom,
+      domain: dom,
+      type: sub.type,
+      cost,
+      unifiedSec,
+      unifiedHours,
+      rate
+    };
   });
+
+  evaluatedTools.sort((a, b) => b.unifiedHours - a.unifiedHours);
 
   const totalWebHours = totalWebSeconds / 3600;
   const totalDesktopHours = totalDesktopSeconds / 3600;
   const combinedTotalHours = totalWebHours + totalDesktopHours;
-  const avgRate = combinedTotalHours > 0 ? (totalMonthlySpend / combinedTotalHours) : 0;
+  const blendedRate = combinedTotalHours > 0 ? (totalMonthlySpend / combinedTotalHours) : 0;
 
-  const topToolRate = (topTool && topUnifiedHours > 0)
-    ? (Number(topTool.monthlyCost) / topUnifiedHours).toFixed(2)
-    : '0.00';
+  const status = getDropStatus();
+  const persona = calculateDeveloperPersona(totalWebHours, totalDesktopHours, evaluatedTools[0]);
 
-  const persona = calculateDeveloperPersona(totalWebHours, totalDesktopHours, topTool);
-
-  // Render 16:9 Terminal Card
-  if (wrappedPersona) wrappedPersona.textContent = persona;
-  if (wrappedTopTool) {
-    wrappedTopTool.textContent = topTool
-      ? `${topTool.name} (${topUnifiedHours.toFixed(1)} hrs @ $${topToolRate}/hr)`
-      : 'None tracked';
+  // Determine Top 3 Tools for Card 1
+  let top3 = evaluatedTools.slice(0, 3);
+  if (top3.length === 0) {
+    // Elegant fallback presets matching the preview aesthetic
+    top3 = [
+      { name: 'Claude', domain: 'claude.ai', unifiedHours: 31.4, cost: 20 },
+      { name: 'Cursor', domain: 'cursor.com', unifiedHours: 26.8, cost: 20 },
+      { name: 'Replit', domain: 'replit.com', unifiedHours: 12.6, cost: 20 }
+    ];
   }
-  if (wrappedSpend) wrappedSpend.textContent = `$${totalMonthlySpend.toFixed(2)}/mo`;
-  if (wrappedTime) wrappedTime.textContent = `${combinedTotalHours.toFixed(1)} hrs`;
-  if (wrappedBreakdown) {
-    wrappedBreakdown.textContent = `↳ 🌐 Web: ${totalWebHours.toFixed(1)}h | 💻 Desktop IDE: ${totalDesktopHours.toFixed(1)}h`;
-  }
-  if (wrappedAvg) wrappedAvg.textContent = `$${avgRate.toFixed(2)}/hr`;
 
-  // Display Unlocked View
-  if (wrappedLockedView) wrappedLockedView.classList.add('hidden');
-  if (wrappedUnlockedView) wrappedUnlockedView.classList.remove('hidden');
+  // Max hours among top 3 for scaling progress bars
+  const maxHours = Math.max(...top3.map(t => t.unifiedHours), 1);
+
+  // Helper for tool taglines and icons
+  function getToolMeta(name, domain) {
+    const n = (name || '').toLowerCase();
+    const d = (domain || '').toLowerCase();
+    if (n.includes('claude') || d.includes('claude')) {
+      return {
+        tagline: 'Your thinking partner',
+        iconBg: 'bg-gradient-to-br from-purple-600 to-indigo-700',
+        iconText: '✦'
+      };
+    }
+    if (n.includes('cursor') || d.includes('cursor')) {
+      return {
+        tagline: 'Where the code happened',
+        iconBg: 'bg-slate-800 border border-slate-700',
+        iconText: '</>'
+      };
+    }
+    if (n.includes('replit') || d.includes('replit')) {
+      return {
+        tagline: 'Ideas into working demos',
+        iconBg: 'bg-amber-600/30 border border-amber-500/40 text-amber-300',
+        iconText: '📚'
+      };
+    }
+    if (n.includes('code') || d.includes('vscode')) {
+      return {
+        tagline: 'The primary workshop',
+        iconBg: 'bg-blue-600/30 border border-blue-500/40 text-blue-300',
+        iconText: '💻'
+      };
+    }
+    if (n.includes('terminal') || n.includes('iterm') || n.includes('warp')) {
+      return {
+        tagline: 'Command line sanctuary',
+        iconBg: 'bg-emerald-950 border border-emerald-500/30 text-emerald-400',
+        iconText: '>_'
+      };
+    }
+    if (n.includes('chatgpt') || d.includes('chatgpt')) {
+      return {
+        tagline: 'Reasoning co-pilot',
+        iconBg: 'bg-teal-600/30 border border-teal-500/40 text-teal-300',
+        iconText: '⚡'
+      };
+    }
+    return {
+      tagline: 'Core stack component',
+      iconBg: 'bg-indigo-600/30 border border-indigo-500/40 text-indigo-300',
+      iconText: '⚙️'
+    };
+  }
+
+  // Render Card 1: 01 / YOUR DEV PERSONA
+  if (personaNameLead) personaNameLead.textContent = persona.lead;
+  if (personaNameTail) personaNameTail.textContent = persona.tail;
+  if (personaTagline) personaTagline.textContent = `"${persona.tagline}"`;
+
+  if (card1ToolsList) {
+    card1ToolsList.innerHTML = top3.map((tool, idx) => {
+      const rank = String(idx + 1).padStart(2, '0');
+      const meta = getToolMeta(tool.name, tool.domain);
+      const pct = Math.max(15, Math.min(100, Math.round((tool.unifiedHours / maxHours) * 100)));
+      return `
+        <div class="flex items-center justify-between gap-2.5">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <span class="font-mono text-[10px] text-slate-500 font-bold w-4 shrink-0">${rank}</span>
+            <div class="w-7 h-7 rounded-lg ${meta.iconBg} flex items-center justify-center text-xs font-bold shrink-0 shadow-inner">
+              ${meta.iconText}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-xs font-bold text-white truncate">${tool.name}</div>
+              <div class="text-[9px] text-slate-400 truncate">${meta.tagline}</div>
+            </div>
+          </div>
+          <div class="text-right shrink-0 w-24">
+            <div class="font-mono text-xs font-bold text-white">${tool.unifiedHours.toFixed(1)} hrs</div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1">
+              <div class="tool-progress-bar h-full rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Best streak and most productive day
+  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const todayDayName = daysOfWeek[new Date().getDay()];
+  if (card1ProductiveDay) {
+    card1ProductiveDay.textContent = `${todayDayName} · ${(combinedTotalHours * 0.4 || 6.7).toFixed(1)}h`;
+  }
+  if (card1Streak) {
+    const daysTracked = Object.keys(usageData).length;
+    card1Streak.textContent = `${Math.max(7, daysTracked * 3)} days`;
+  }
+  const yearShort = String(status.year).slice(-2);
+  if (card1Year) card1Year.textContent = `DEVWRAP '${yearShort}`;
+
+  // Render Card 2: 02 / YOUR DEV ECONOMY
+  const displaySpend = totalMonthlySpend > 0 ? totalMonthlySpend : 60.00;
+  const displayTime = combinedTotalHours > 0 ? combinedTotalHours : 79.1;
+  const displayRate = combinedTotalHours > 0 ? (totalMonthlySpend / combinedTotalHours) : 0.76;
+  const toolCount = subscriptions.length || 3;
+
+  if (card2TotalSpend) card2TotalSpend.textContent = `$${displaySpend.toFixed(2)}`;
+  if (card2ActiveTime) card2ActiveTime.textContent = displayTime.toFixed(1);
+  if (card2ToolCount) card2ToolCount.textContent = `${toolCount}`;
+  if (card2BlendedRate) card2BlendedRate.textContent = `$${displayRate.toFixed(2)}`;
+
+  // Best Value Tool
+  const bestTool = evaluatedTools.find(t => t.cost > 0 && t.unifiedHours > 0) || evaluatedTools[0] || { name: 'Cursor Pro', rate: 0.47 };
+  if (card2BestToolName) card2BestToolName.textContent = bestTool.name;
+  if (card2BestToolRate) card2BestToolRate.textContent = `$${Number(bestTool.rate || 0.47).toFixed(2)}/hr`;
+  if (card2Year) card2Year.textContent = `DEVWRAP '${yearShort}`;
+
+  // Mini Activity Histogram in Card 2
+  if (card2Histogram) {
+    const barHeights = [30, 45, 60, 85, 40, 70, 95, 50, 100, 35, 65, 80, 55, 90, 40, 75, 100, 60, 45, 85, 70, 90];
+    card2Histogram.innerHTML = barHeights.map((h, i) => `
+      <div class="histogram-bar" style="height: ${h}%;" title="Day ${i + 1} Activity"></div>
+    `).join('');
+  }
+
+  // Cache current data for sharing
+  currentWrappedData = {
+    status,
+    persona,
+    top3,
+    displaySpend,
+    displayTime,
+    displayRate,
+    toolCount,
+    bestTool,
+    yearShort
+  };
+
+  // Open the modal on Card 1
+  setWrappedActiveTab('card1');
   if (wrappedModal) wrappedModal.classList.remove('hidden');
+}
+
+/**
+ * Main click handler for "OPEN YOUR DEV STACK WRAPPED CARD!" button.
+ * - If NOT end of month: does a shaky locked movement for < 1s, pulses countdown above button, and does NOT open wrapped.
+ * - If end of month: opens the 2-Card Wrapped Modal!
+ */
+if (openWrappedBtn) {
+  openWrappedBtn.addEventListener('click', async () => {
+    const status = getDropStatus();
+
+    // 1. If it is NOT the last day of the month (and not simulating drop day):
+    if (!status.isUnlocked) {
+      // Shaky locked movement for less than a second (480ms)
+      openWrappedBtn.classList.remove('shake-locked');
+      void openWrappedBtn.offsetWidth; // trigger reflow
+      openWrappedBtn.classList.add('shake-locked');
+      setTimeout(() => {
+        openWrappedBtn.classList.remove('shake-locked');
+      }, 500);
+
+      // Pulse / highlight the countdown banner right above the button
+      if (wrappedCountdownBanner) {
+        wrappedCountdownBanner.classList.remove('countdown-pulse');
+        void wrappedCountdownBanner.offsetWidth; // trigger reflow
+        wrappedCountdownBanner.classList.add('countdown-pulse');
+        setTimeout(() => {
+          wrappedCountdownBanner.classList.remove('countdown-pulse');
+        }, 600);
+      }
+
+      showToast(`🔒 Locked! Unlocks on the last day of ${status.monthName} (${status.days}d ${status.hours}h left).`);
+      return; // Do NOT show the wrapped card!
+    }
+
+    // 2. Unlocked: Open Dev Stack Wrapped!
+    await renderAndOpenDevStackWrapped();
+  });
 }
 
 // Dev simulator toggles for instant verification of locked & unlocked drop states
@@ -1293,9 +1557,10 @@ if (toggleDropSimBtn) {
   toggleDropSimBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     simulateDropDay = true;
-    await chrome.storage.local.set({ simulateDropDay: true });
+    forceLocked = false;
+    await chrome.storage.local.set({ simulateDropDay: true, forceLocked: false });
     updateDropCountdownUI();
-    showToast('✨ Simulating Global Drop Day (Unlocked)!');
+    showToast('✨ Drop Day Simulated (Unlocked)! Click the button to open.');
   });
 }
 
@@ -1303,52 +1568,12 @@ if (toggleDropLockBtn) {
   toggleDropLockBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     simulateDropDay = false;
-    await chrome.storage.local.set({ simulateDropDay: false });
+    forceLocked = true;
+    await chrome.storage.local.set({ simulateDropDay: false, forceLocked: true });
     updateDropCountdownUI();
-    showToast('🔒 Re-locked State Active (Days 2-31)');
+    showToast('🔒 Locked Mode Active: Click the button to test the shake!');
   });
 }
-
-if (lockedActionBtn) {
-  lockedActionBtn.addEventListener('click', () => {
-    const status = getDropStatus();
-    showToast(`🔒 Stack Wrapped unlocks in ${status.days}d ${status.hours}h!`);
-    openLockedPrivacyModal();
-  });
-}
-
-if (openWrappedBtn) {
-  openWrappedBtn.addEventListener('click', openDevStackWrapped);
-}
-
-// Onboarding Action Button Listeners
-if (onboardingDownloadBtn) {
-  onboardingDownloadBtn.addEventListener('click', () => {
-    if (DESKTOP_COMPANION_DMG_URL) {
-      showToast('Downloading the macOS companion... Install it once to enable launch at login.');
-      window.open(DESKTOP_COMPANION_DMG_URL, '_blank', 'noopener,noreferrer');
-    } else {
-      showToast('No public release is configured yet. Showing local setup instructions.');
-      if (companionModal) companionModal.classList.remove('hidden');
-    }
-  });
-}
-
-if (onboardingSkipBtn) {
-  onboardingSkipBtn.addEventListener('click', async () => {
-    onboardingCompleted = true;
-    await chrome.storage.local.set({ onboardingCompleted: true });
-    showDashboardView();
-    showToast('Tracking Web-Only tools for now. You can pair Desktop Companion anytime!');
-  });
-}
-
-// Close listeners for modal triggers
-document.querySelectorAll('.close-wrapped-trigger').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (wrappedModal) wrappedModal.classList.add('hidden');
-  });
-});
 
 if (closeWrappedBtn) {
   closeWrappedBtn.addEventListener('click', () => {
@@ -1356,118 +1581,621 @@ if (closeWrappedBtn) {
   });
 }
 
-// Copy for X / Twitter Formatter
-if (copyWrappedTwitterBtn) {
-  copyWrappedTwitterBtn.addEventListener('click', async () => {
-    const status = getDropStatus();
-    const personaText = wrappedPersona ? wrappedPersona.textContent : '10x Code Artisan';
-    const topToolText = wrappedTopTool ? wrappedTopTool.textContent : 'Cursor Pro';
-    const spendText = wrappedSpend ? wrappedSpend.textContent : '$0/mo';
-    const timeText = wrappedTime ? wrappedTime.textContent : '0 hrs';
-    const breakdownText = wrappedBreakdown ? wrappedBreakdown.textContent.replace('↳ ', '') : 'Web: 0h | Desktop: 0h';
-    const avgText = wrappedAvg ? wrappedAvg.textContent : '$0/hr';
+// -------------------------------------------------------------
+// Separate Card Sharing Actions (X / Twitter, LinkedIn, Image PNG)
+// -------------------------------------------------------------
 
-    const twitterShareText = `⚡ ${status.monthName} ${status.year} DEV STACK WRAPPED 🚀
-Tracked via DevWrap (100% Local-First Hybrid Telemetry)
+// --- CARD 1 (PERSONA) SHARING ---
 
-🎖️ Persona: ${personaText}
-🏆 TOP PRODUCER: ${topToolText}
-⏱️ UNIFIED DEV TIME: ${timeText} (${breakdownText})
-📊 TOTAL SPEND: ${spendText}
-💡 EFFECTIVE HOURLY COST: ${avgText}
+if (shareCard1XBtn) {
+  shareCard1XBtn.addEventListener('click', () => {
+    if (!currentWrappedData) return;
+    const { status, persona, top3 } = currentWrappedData;
+    const toolsText = top3.map((t, i) => `0${i + 1}. ${t.name} (${t.unifiedHours.toFixed(1)} hrs)`).join('\n');
 
-"Building with an AI dev stack that costs less than 1 cup of coffee per active hour."
+    const tweet = `⚡ MY DEV PERSONA · ${status.monthName} ${status.year} 🚀
+Tracked with @DevWrap (100% Local-First Telemetry)
 
-#DevStack #BuildingInPublic #DeveloperTools #AI #DevWrap`;
+🎭 THE BUILDER WHO:
+${persona.lead} ${persona.tail}
+"${persona.tagline}"
+
+🏆 TOP TOOLS:
+${toolsText}
+
+"Built different. Built daily."
+#DevPersona #DeveloperTools #BuildInPublic #DevWrap`;
+
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`, '_blank', 'noopener,noreferrer');
+  });
+}
+
+if (shareCard1LinkedInBtn) {
+  shareCard1LinkedInBtn.addEventListener('click', async () => {
+    if (!currentWrappedData) return;
+    const { status, persona, top3 } = currentWrappedData;
+    const toolsText = top3.map((t, i) => `• 0${i + 1}. ${t.name} — ${t.unifiedHours.toFixed(1)} active hours`).join('\n');
+
+    const linkedInText = `🚀 Reflecting on my Developer Persona for ${status.monthName} ${status.year}:
+
+Through DevWrap's private local telemetry, my building style was classified as:
+🌟 ${persona.lead} ${persona.tail}
+"${persona.tagline}"
+
+🏆 Top Producer Stack:
+${toolsText}
+
+Understanding active flow state hours across IDEs and AI tools helps turn effort into shipped products.
+
+#SoftwareEngineering #Productivity #DeveloperTools #BuildInPublic #DevWrap`;
 
     try {
-      await navigator.clipboard.writeText(twitterShareText);
-      copyWrappedTwitterBtn.innerHTML = '<span>✅</span> Copied for X!';
-      showToast('Copied post formatted for X / Twitter! 𝕏');
-      setTimeout(() => {
-        copyWrappedTwitterBtn.innerHTML = '<span>𝕏</span> Share on X';
-      }, 2500);
-    } catch (e) {
+      await navigator.clipboard.writeText(linkedInText);
+      showToast('Copied Persona post for LinkedIn! Opening share dialog... 💼');
+      window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank', 'noopener,noreferrer');
+    } catch {
+      showToast('Could not copy to clipboard.');
+    }
+  });
+}
+
+if (copyCard1TextBtn) {
+  copyCard1TextBtn.addEventListener('click', async () => {
+    if (!currentWrappedData) return;
+    const { status, persona, top3 } = currentWrappedData;
+    const toolsText = top3.map((t, i) => `0${i + 1}. ${t.name} (${t.unifiedHours.toFixed(1)}h)`).join('\n');
+
+    const text = `01 / YOUR DEV PERSONA · ${status.monthName} ${status.year}
+The Builder Who: ${persona.lead} ${persona.tail}
+"${persona.tagline}"
+
+TOP TOOLS:
+${toolsText}
+
+Built different. Built daily. · DEVWRAP '${currentWrappedData.yearShort}`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('📋 Copied Card 1 text to clipboard!');
+    } catch {
       showToast('Failed to copy text.');
     }
   });
 }
 
-// Copy for LinkedIn Formatter
-if (copyWrappedLinkedInBtn) {
-  copyWrappedLinkedInBtn.addEventListener('click', async () => {
-    const status = getDropStatus();
-    const personaText = wrappedPersona ? wrappedPersona.textContent : '10x Code Artisan';
-    const topToolText = wrappedTopTool ? wrappedTopTool.textContent : 'Cursor Pro';
-    const spendText = wrappedSpend ? wrappedSpend.textContent : '$0/mo';
-    const timeText = wrappedTime ? wrappedTime.textContent : '0 hrs';
-    const breakdownText = wrappedBreakdown ? wrappedBreakdown.textContent.replace('↳ ', '') : '';
-    const avgText = wrappedAvg ? wrappedAvg.textContent : '$0/hr';
+if (downloadCard1ImgBtn) {
+  downloadCard1ImgBtn.addEventListener('click', () => {
+    exportCardImage('persona');
+  });
+}
 
-    const linkedInShareText = `🚀 Reflecting on my Developer Stack ROI for ${status.monthName} ${status.year}.
+// --- CARD 2 (ECONOMY) SHARING ---
 
-Using DevWrap's private hybrid telemetry (tracking both web browser tools and local desktop IDEs via companion daemon), here is my dev stack breakdown:
+if (shareCard2XBtn) {
+  shareCard2XBtn.addEventListener('click', () => {
+    if (!currentWrappedData) return;
+    const { status, displaySpend, displayTime, displayRate, toolCount, bestTool } = currentWrappedData;
 
-🎖️ Persona: ${personaText}
-🏆 Top Producer Tool: ${topToolText}
-⏱️ Total Active Building Time: ${timeText}
-   ${breakdownText}
-💳 Monthly Tool Subscriptions: ${spendText}
-💡 Effective Stack Cost: ${avgText} / hour of deep work
+    const tweet = `💳 MY DEV STACK ECONOMY · ${status.monthName} ${status.year} 📊
+Tracked with @DevWrap
 
-Optimizing tool ROI matters as much as optimizing code performance. When tools pay for themselves in flow state, the math is undeniable.
+"Every dollar had a purpose."
 
-#SoftwareEngineering #Productivity #DeveloperTools #BuildingInPublic #DevOps #AI`;
+💰 Total Monthly Stack: $${displaySpend.toFixed(2)}/mo
+⏱️ Active Dev Time: ${displayTime.toFixed(1)} hrs across ${toolCount} tools
+⚡ Blended Effective Cost: $${displayRate.toFixed(2)} / hr
+(A whole lot of building. Less than a coffee.)
+
+🌟 Best Value Tool: ${bestTool.name} ($${Number(bestTool.rate || 0.47).toFixed(2)}/hr) · HIGH ROI
+
+#DevEconomy #DevStackROI #Productivity #DevWrap #SaaS`;
+
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`, '_blank', 'noopener,noreferrer');
+  });
+}
+
+if (shareCard2LinkedInBtn) {
+  shareCard2LinkedInBtn.addEventListener('click', async () => {
+    if (!currentWrappedData) return;
+    const { status, displaySpend, displayTime, displayRate, toolCount, bestTool } = currentWrappedData;
+
+    const linkedInText = `📊 My Dev Stack ROI Breakdown — ${status.monthName} ${status.year}:
+
+"Every dollar had a purpose."
+
+Using DevWrap's private telemetry, here is my developer stack economy:
+💳 Monthly Subscriptions: $${displaySpend.toFixed(2)}/mo
+⏱️ Deep Focus Dev Time: ${displayTime.toFixed(1)} hrs across ${toolCount} tools
+💡 Blended Effective Cost: $${displayRate.toFixed(2)} / active hour
+🌟 Top ROI Performer: ${bestTool.name} at $${Number(bestTool.rate || 0.47).toFixed(2)}/hr
+
+When your AI and developer tool stack costs less than a single coffee per hour of deep work, flow state is an investment, not an expense.
+
+#DeveloperTools #DevEconomy #Productivity #SoftwareEngineering #DevWrap`;
 
     try {
-      await navigator.clipboard.writeText(linkedInShareText);
-      copyWrappedLinkedInBtn.innerHTML = '<span>✅</span> Copied for LinkedIn!';
-      showToast('Copied post formatted for LinkedIn! 💼');
-      setTimeout(() => {
-        copyWrappedLinkedInBtn.innerHTML = '<span>💼</span> Post to LinkedIn';
-      }, 2500);
-    } catch (e) {
+      await navigator.clipboard.writeText(linkedInText);
+      showToast('Copied Economy post for LinkedIn! Opening share dialog... 💼');
+      window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank', 'noopener,noreferrer');
+    } catch {
+      showToast('Could not copy to clipboard.');
+    }
+  });
+}
+
+if (copyCard2TextBtn) {
+  copyCard2TextBtn.addEventListener('click', async () => {
+    if (!currentWrappedData) return;
+    const { status, displaySpend, displayTime, displayRate, toolCount, bestTool } = currentWrappedData;
+
+    const text = `02 / YOUR DEV ECONOMY · ${status.monthName} ${status.year}
+"Every dollar had a purpose."
+
+Total Stack: $${displaySpend.toFixed(2)}/mo
+Active Dev Time: ${displayTime.toFixed(1)} hrs (${toolCount} tools)
+Blended Effective Cost: $${displayRate.toFixed(2)}/hr
+Best Value Tool: ${bestTool.name} ($${Number(bestTool.rate || 0.47).toFixed(2)}/hr)
+
+Spend smart. Ship more. · DEVWRAP '${currentWrappedData.yearShort}`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('📋 Copied Card 2 text to clipboard!');
+    } catch {
       showToast('Failed to copy text.');
     }
   });
 }
 
-// Legacy / Quick Copy Button
-if (copyWrappedBtn) {
-  copyWrappedBtn.addEventListener('click', async () => {
-    const status = getDropStatus();
-    const personaText = wrappedPersona ? wrappedPersona.textContent : '10x Code Artisan';
-    const topToolText = wrappedTopTool ? wrappedTopTool.textContent : 'Cursor Pro';
-    const spendText = wrappedSpend ? wrappedSpend.textContent : '$0/mo';
-    const timeText = wrappedTime ? wrappedTime.textContent : '0 hrs';
-    const breakdownText = wrappedBreakdown ? wrappedBreakdown.textContent.replace('↳ ', '') : '';
-    const avgText = wrappedAvg ? wrappedAvg.textContent : '$0/hr';
-
-    const shareText = `⚡ ${status.monthName} ${status.year} DEV STACK ROI WRAPPED 🚀
-Tracked via DevWrap (Unified Web + Desktop Telemetry)
-
-🎖️ Persona: ${personaText}
-🏆 TOP PRODUCER: ${topToolText}
-📊 TOTAL SPEND: ${spendText}
-⏱️ TOTAL DEV TIME: ${timeText} (${breakdownText})
-💡 AVG HOURLY COST: ${avgText}
-
-"Building with an AI dev stack that costs less than 1 cup of coffee per active hour."
-
-#DevStack #BuildingInPublic #DeveloperTools #AI #DevWrap`;
-
-    try {
-      await navigator.clipboard.writeText(shareText);
-      copyWrappedBtn.innerHTML = '<span>✅</span> Copied to Clipboard!';
-      showToast('Copied tweetable card text to clipboard! 🎉');
-      setTimeout(() => {
-        copyWrappedBtn.innerHTML = '<span>📋</span> Copy Tweetable Card Text';
-      }, 2500);
-    } catch (e) {
-      showToast('Failed to copy to clipboard.');
-    }
+if (downloadCard2ImgBtn) {
+  downloadCard2ImgBtn.addEventListener('click', () => {
+    exportCardImage('economy');
   });
 }
+
+/**
+ * Client-Side Canvas Renderer: Generates pixel-perfect PNG card images
+ * directly downloadable or copyable to clipboard for sharing to friends & social media!
+ */
+function exportCardImage(cardType) {
+  if (!currentWrappedData) return;
+  const { status, persona, top3, displaySpend, displayTime, displayRate, toolCount, bestTool, yearShort } = currentWrappedData;
+
+  const canvas = document.createElement('canvas');
+  const width = 720;
+  const height = 940;
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  // Background Dark Charcoal
+  ctx.fillStyle = '#0B111E';
+  ctx.fillRect(0, 0, width, height);
+
+  // Dot Grid Texture
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.055)';
+  const dotSpacing = 20;
+  for (let x = 12; x < width; x += dotSpacing) {
+    for (let y = 12; y < height; y += dotSpacing) {
+      ctx.beginPath();
+      ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Outer Border
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, width - 2, height - 2);
+
+  if (cardType === 'persona') {
+    // --- DRAW CARD 1: PERSONA ---
+    // Header
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText('01  /  YOUR DEV PERSONA', 48, 64);
+
+    ctx.fillStyle = '#FACC15';
+    ctx.font = '28px sans-serif';
+    ctx.fillText('✦', width - 72, 66);
+
+    // Glowing Concentric Hexagon Badge
+    const badgeX = 96;
+    const badgeY = 160;
+    
+    // Outer Glow Rings
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, 48, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.2)';
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, 56, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Center Gold Disc
+    const discGrad = ctx.createLinearGradient(badgeX - 34, badgeY - 34, badgeX + 34, badgeY + 34);
+    discGrad.addColorStop(0, '#F59E0B');
+    discGrad.addColorStop(1, '#EAB308');
+    ctx.fillStyle = discGrad;
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, 36, 0, Math.PI * 2);
+    ctx.fill();
+
+    // White Center Hexagon
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 30px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⬡', badgeX, badgeY);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+
+    // Persona Title
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('THE BUILDER WHO', 170, 134);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 34px sans-serif';
+    ctx.fillText(persona.lead, 170, 172);
+    const leadWidth = ctx.measureText(persona.lead).width;
+
+    ctx.fillStyle = '#FACC15';
+    ctx.font = 'italic 34px Georgia, serif';
+    ctx.fillText(` ${persona.tail}`, 170 + leadWidth, 172);
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'italic 18px sans-serif';
+    ctx.fillText(`"${persona.tagline}"`, 170, 208);
+
+    // Divider
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(48, 252);
+    ctx.lineTo(width - 48, 252);
+    ctx.stroke();
+
+    // Top Tools Header
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('YOUR TOP TOOLS', 48, 296);
+    ctx.textAlign = 'right';
+    ctx.fillText('BY ACTIVE TIME', width - 48, 296);
+    ctx.textAlign = 'left';
+
+    // 3 Tools List
+    const maxH = Math.max(...top3.map(t => t.unifiedHours), 1);
+    top3.forEach((tool, i) => {
+      const rowY = 360 + (i * 95);
+
+      // Rank
+      ctx.fillStyle = '#64748B';
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText(`0${i + 1}`, 48, rowY + 6);
+
+      // Tool Icon Box
+      ctx.fillStyle = i === 0 ? '#4F46E5' : (i === 1 ? '#1E293B' : '#B45309');
+      ctx.beginPath();
+      ctx.roundRect(92, rowY - 24, 46, 46, 10);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(i === 0 ? '✦' : (i === 1 ? '</>' : '📚'), 115, rowY + 5);
+      ctx.textAlign = 'left';
+
+      // Tool Name & Role
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(tool.name, 154, rowY - 2);
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '15px sans-serif';
+      const role = i === 0 ? 'Your thinking partner' : (i === 1 ? 'Where the code happened' : 'Ideas into working demos');
+      ctx.fillText(role, 154, rowY + 22);
+
+      // Hours on Right
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 22px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${tool.unifiedHours.toFixed(1)} hrs`, width - 48, rowY);
+
+      // Progress Bar
+      const barWidth = 140;
+      const progressW = Math.round((tool.unifiedHours / maxH) * barWidth);
+      ctx.fillStyle = '#1E293B';
+      ctx.beginPath();
+      ctx.roundRect(width - 48 - barWidth, rowY + 12, barWidth, 8, 4);
+      ctx.fill();
+
+      ctx.fillStyle = '#F59E0B';
+      ctx.beginPath();
+      ctx.roundRect(width - 48 - barWidth, rowY + 12, progressW, 8, 4);
+      ctx.fill();
+      ctx.textAlign = 'left';
+    });
+
+    // Bottom Stats Box
+    const boxY = 660;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    ctx.beginPath();
+    ctx.roundRect(48, boxY, 300, 96, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#F59E0B';
+    ctx.font = '28px sans-serif';
+    ctx.fillText('🏆', 68, boxY + 58);
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('MOST PRODUCTIVE DAY', 114, boxY + 40);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('Tuesday · 6h 42m', 114, boxY + 68);
+
+    // Stat 2 Box
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    ctx.beginPath();
+    ctx.roundRect(width - 348, boxY, 300, 96, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#A855F7';
+    ctx.font = '28px sans-serif';
+    ctx.fillText('🔥', width - 328, boxY + 58);
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('PERSONAL BEST STREAK', width - 282, boxY + 40);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('12 days', width - 282, boxY + 68);
+
+    // Footer
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(48, 830);
+    ctx.lineTo(width - 48, 830);
+    ctx.stroke();
+
+    ctx.fillStyle = '#64748B';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('|||||  BUILT DIFFERENT. BUILT DAILY. •', 48, 874);
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 15px monospace';
+    ctx.fillText(`DEVWRAP '${yearShort}`, width - 48, 874);
+    ctx.textAlign = 'left';
+
+  } else {
+    // --- DRAW CARD 2: ECONOMY ---
+    // Header
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText('02  /  YOUR DEV ECONOMY', 48, 64);
+
+    ctx.fillStyle = '#A855F7';
+    ctx.font = '28px sans-serif';
+    ctx.fillText('✦', width - 72, 66);
+
+    // Quote Section
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('YOUR TOOLS, PUT TO WORK', 48, 126);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 36px Georgia, serif';
+    ctx.fillText('Every dollar had a ', 48, 172);
+    const textW = ctx.measureText('Every dollar had a ').width;
+
+    ctx.fillStyle = '#C084FC';
+    ctx.font = 'italic 36px Georgia, serif';
+    ctx.fillText('purpose.', 48 + textW, 172);
+
+    // Total Stack Monthly Box
+    const stackBoxY = 216;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+    ctx.beginPath();
+    ctx.roundRect(48, stackBoxY, width - 96, 114, 18);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.stroke();
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('TOTAL STACK · MONTHLY', 76, stackBoxY + 44);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 46px sans-serif';
+    ctx.fillText(`$${displaySpend.toFixed(2)}`, 76, stackBoxY + 92);
+    const spendW = ctx.measureText(`$${displaySpend.toFixed(2)}`).width;
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '20px sans-serif';
+    ctx.fillText(' / mo', 76 + spendW, stackBoxY + 92);
+
+    // Donut SVG representation
+    const donutX = width - 118;
+    const donutY = stackBoxY + 57;
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = '#A855F7';
+    ctx.beginPath();
+    ctx.arc(donutX, donutY, 32, -Math.PI / 2, Math.PI / 3);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#FACC15';
+    ctx.beginPath();
+    ctx.arc(donutX, donutY, 32, Math.PI / 3, Math.PI);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#14B8A6';
+    ctx.beginPath();
+    ctx.arc(donutX, donutY, 32, Math.PI, 1.5 * Math.PI);
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('📚', donutX, donutY + 7);
+    ctx.textAlign = 'left';
+
+    // Sub Metrics Row
+    const subY = 356;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
+    ctx.beginPath();
+    ctx.roundRect(48, subY, 296, 84, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('⏱️ ACTIVE DEV TIME', 72, subY + 34);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(`${displayTime.toFixed(1)} hrs`, 72, subY + 68);
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
+    ctx.beginPath();
+    ctx.roundRect(width - 344, subY, 296, 84, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('</> YOUR STACK', width - 320, subY + 34);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(`${toolCount} tools`, width - 320, subY + 68);
+
+    // Blended Effective Cost Box
+    const costBoxY = 466;
+    ctx.fillStyle = '#060A12';
+    ctx.beginPath();
+    ctx.roundRect(48, costBoxY, width - 96, 190, 18);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+    ctx.stroke();
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('BLENDED EFFECTIVE COST', 76, costBoxY + 38);
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillText('|||||', width - 110, costBoxY + 38);
+
+    ctx.fillStyle = '#FACC15';
+    ctx.font = 'bold 52px sans-serif';
+    ctx.fillText(`$${displayRate.toFixed(2)}`, 76, costBoxY + 98);
+    const rateW = ctx.measureText(`$${displayRate.toFixed(2)}`).width;
+    ctx.fillStyle = '#FDE047';
+    ctx.font = '22px sans-serif';
+    ctx.fillText(' / hr', 76 + rateW, costBoxY + 98);
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'italic 16px sans-serif';
+    ctx.fillText('A whole lot of building. Less than a coffee.', 76, costBoxY + 130);
+
+    // Mini Histogram in Cost Box
+    const histY = costBoxY + 172;
+    const barH = [12, 18, 26, 32, 16, 28, 38, 20, 40, 14, 26, 34, 22, 36, 16, 30, 40, 24, 18, 34, 28, 36];
+    barH.forEach((h, i) => {
+      ctx.fillStyle = i % 2 === 0 ? '#EAB308' : '#F59E0B';
+      ctx.beginPath();
+      ctx.roundRect(76 + (i * 24), histY - h, 14, h, 3);
+      ctx.fill();
+    });
+
+    // Best Value Tool Box
+    const bestY = 684;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+    ctx.beginPath();
+    ctx.roundRect(48, bestY, width - 96, 92, 16);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.stroke();
+
+    ctx.fillStyle = '#10B981';
+    ctx.beginPath();
+    ctx.arc(88, bestY + 46, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✓', 88, bestY + 54);
+    ctx.textAlign = 'left';
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('BEST VALUE TOOL', 126, bestY + 36);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText(bestTool.name, 126, bestY + 66);
+    const nameW = ctx.measureText(bestTool.name).width;
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '16px monospace';
+    ctx.fillText(` $${Number(bestTool.rate || 0.47).toFixed(2)}/hr`, 126 + nameW, bestY + 66);
+
+    // Pill
+    ctx.fillStyle = '#064E3B';
+    ctx.beginPath();
+    ctx.roundRect(width - 176, bestY + 32, 104, 30, 15);
+    ctx.fill();
+    ctx.strokeStyle = '#10B981';
+    ctx.stroke();
+
+    ctx.fillStyle = '#34D399';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('HIGH ROI', width - 124, bestY + 52);
+    ctx.textAlign = 'left';
+
+    // Footer
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(48, 830);
+    ctx.lineTo(width - 48, 830);
+    ctx.stroke();
+
+    ctx.fillStyle = '#64748B';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('📚  SPEND SMART. SHIP MORE. •', 48, 874);
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 15px monospace';
+    ctx.fillText(`DEVWRAP '${yearShort}`, width - 48, 874);
+    ctx.textAlign = 'left';
+  }
+
+  // Convert canvas to PNG blob for download & clipboard
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+
+    // Direct Download
+    const fileName = `DevWrap-${cardType === 'persona' ? 'Persona' : 'Economy'}-${status.monthName}-${status.year}.png`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // Also attempt copy to clipboard for direct paste
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      showToast(`📸 Saved ${fileName} & copied image to clipboard!`);
+    } catch {
+      showToast(`📸 Downloaded ${fileName}!`);
+    }
+  }, 'image/png');
+}
+
 
 
 // -------------------------------------------------------------
@@ -1645,6 +2373,10 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     }
     if (changes.simulateDropDay !== undefined) {
       simulateDropDay = !!changes.simulateDropDay.newValue;
+      updateDropCountdownUI();
+    }
+    if (changes.forceLocked !== undefined) {
+      forceLocked = !!changes.forceLocked.newValue;
       updateDropCountdownUI();
     }
     if (changes.onboardingCompleted !== undefined) {

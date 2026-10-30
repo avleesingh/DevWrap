@@ -289,59 +289,39 @@
       </div>
     </div>
 
-    <!-- Dual-State Wrapped Trigger Container -->
+    <!-- Wrapped Trigger Container with Countdown Directly Above the Button -->
     <div id="wrappedTriggerContainer" class="pt-3 border-t border-slate-800/80 mt-4">
-      <!-- State A: Locked (Days 2-31) -->
-      <div id="wrappedLockedState" class="card-glow rounded-xl p-3 border border-amber-500/25 bg-slate-900/80 relative overflow-hidden transition">
-        <!-- Ambient Glow -->
-        <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-500/10 rounded-full blur-xl pointer-events-none"></div>
-
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xs shadow-inner">
-              🔒
-            </div>
-            <span id="lockedMonthBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase tracking-wider">
-              🔒 OCTOBER STACK WRAPPED LOCKED
-            </span>
-          </div>
-          <!-- Dev simulator toggle button -->
-          <button type="button" id="toggleDropSimBtn" class="text-[9px] text-slate-500 hover:text-indigo-400 px-1.5 py-0.5 rounded border border-slate-800 hover:border-slate-700 transition" title="Preview Drop Day (Dev Toggle)">
-            Preview Drop
-          </button>
-        </div>
-
-        <div class="flex items-center justify-between bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-slate-800/80 mb-2">
-          <span class="text-[11px] text-slate-400">Month-End Drop In:</span>
-          <span id="countdownClock" class="font-mono text-xs font-bold text-amber-300 tracking-wider">
+      <!-- Live Countdown Banner: Positioned directly above the button -->
+      <div id="wrappedCountdownBanner" class="p-2.5 rounded-xl border border-amber-500/30 bg-slate-900/90 mb-2 relative overflow-hidden transition-all duration-300">
+        <div class="flex items-center justify-between gap-2">
+          <span id="countdownStatusBadge" class="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 uppercase tracking-wider shrink-0">
+            <span id="countdownStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span id="countdownStatusText">🔒 OCTOBER WRAPPED UNLOCKS IN:</span>
+          </span>
+          <span id="countdownClock" class="font-mono text-xs font-bold text-amber-300 tracking-wider shrink-0">
             --d : --h : --m : --s
           </span>
         </div>
-
-        <button type="button" id="lockedActionBtn" class="w-full py-2 px-3 rounded-lg bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 text-[11px] font-semibold text-slate-300 flex items-center justify-center gap-2 transition cursor-pointer">
-          <span id="lockedBtnText">🔒 Combined Usage Drops on Last Day (--d --h)</span>
-        </button>
       </div>
 
-      <!-- State B: Unlocked (1st of Month) -->
-      <div id="wrappedUnlockedState" class="hidden">
-        <div class="flex items-center justify-between mb-1.5 px-1">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            GLOBAL MONTHLY DROP IS LIVE!
-          </span>
-          <!-- Dev simulator toggle button -->
-          <button type="button" id="toggleDropLockBtn" class="text-[9px] text-slate-500 hover:text-amber-400 px-1.5 py-0.5 rounded border border-slate-800 hover:border-slate-700 transition" title="Re-lock State (Dev Toggle)">
-            Re-Lock
-          </button>
+      <!-- Main Wrapped Trigger Button (shakes if clicked when locked) -->
+      <button type="button" id="openWrappedBtn" class="w-full relative text-white font-extrabold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition border cursor-pointer bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:from-emerald-500 hover:to-teal-400 border-emerald-400/40">
+        <span id="openWrappedBtnIcon">✨</span>
+        <span id="openWrappedBtnText">OPEN YOUR DEV STACK WRAPPED CARD!</span>
+        <span id="openWrappedPing" class="absolute -top-1 -right-1 flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        </span>
+      </button>
+
+      <!-- Dev Simulator Toggles for Testing Drop States -->
+      <div class="flex items-center justify-between mt-2 px-1 text-[10px] text-slate-500">
+        <span id="dropStatusModeLabel" class="font-mono text-[9px] text-slate-400">Locked (Days 1–30)</span>
+        <div class="flex items-center gap-2">
+          <button type="button" id="toggleDropSimBtn" class="text-slate-400 hover:text-emerald-400 transition" title="Preview Last Day / Drop Live">Preview Drop</button>
+          <span>•</span>
+          <button type="button" id="toggleDropLockBtn" class="text-slate-400 hover:text-amber-400 transition" title="Force Lock to Test Shake Animation">Re-Lock (Test Shake)</button>
         </div>
-        <button type="button" id="openWrappedBtn" class="w-full relative bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:from-emerald-500 hover:to-teal-400 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/60 transition border border-emerald-400/40">
-          <span>✨</span> OPEN YOUR DEV STACK WRAPPED CARD!
-          <span class="absolute -top-1 -right-1 flex h-3 w-3">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-          </span>
-        </button>
       </div>
     </div>
   </div>
@@ -415,134 +395,297 @@
     </div>
   </div>
 
-  <!-- Modal: Dev Stack Wrapped Share Card -->
-  <div id="wrappedModal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 z-50">
-    <div class="card-glow rounded-2xl p-4 w-full max-w-sm space-y-3 border border-indigo-500/30 max-h-[580px] overflow-y-auto">
+  <!-- Modal: Dev Stack Wrapped 2-Card Share Experience -->
+  <div id="wrappedModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-2.5 z-50">
+    <div class="card-glow rounded-2xl p-3.5 w-full max-w-[400px] space-y-3 border border-indigo-500/30 max-h-[580px] overflow-y-auto">
       
-      <!-- Privacy Shield / Locked View -->
-      <div id="wrappedLockedView" class="hidden space-y-3">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center gap-1.5">
-            <span class="text-amber-400 text-sm">🔒</span>
-            <div class="text-xs font-bold text-amber-400 tracking-wider">MONTHLY TELEMETRY LOCKED</div>
-          </div>
-          <button type="button" class="close-wrapped-trigger text-slate-400 hover:text-white text-xs px-2 py-1">✕</button>
+      <!-- Top Modal Header with Segmented Card Switcher & Close -->
+      <div class="flex items-center justify-between pb-1 border-b border-slate-800/80">
+        <!-- Segmented Control for Card 1 / Card 2 / Both -->
+        <div class="flex items-center gap-1 p-0.5 bg-slate-950/80 rounded-xl border border-slate-800">
+          <button type="button" id="tabCard1Btn" class="card-tab-btn active-card-tab flex items-center gap-1">
+            <span class="text-amber-400">✦</span> 01 Persona
+          </button>
+          <button type="button" id="tabCard2Btn" class="card-tab-btn flex items-center gap-1">
+            <span class="text-purple-400">✦</span> 02 Economy
+          </button>
+          <button type="button" id="tabBothCardsBtn" class="card-tab-btn flex items-center gap-1">
+            <span>✨</span> Both
+          </button>
         </div>
 
-        <div class="bg-slate-950/90 p-4 rounded-xl border border-amber-500/30 text-center space-y-2.5">
-          <div class="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl text-amber-400">
-            🔒
-          </div>
-          <div>
-            <div class="text-xs font-bold text-white uppercase tracking-wider">Combined Telemetry Locked Until Month-End</div>
-            <div class="text-[11px] text-slate-400 mt-1">Usage is refreshed every day so you only see today's tool time. Your combined monthly usage, stack secrets, and developer persona unlock on the last day of the month!</div>
-          </div>
-
-          <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 text-left font-mono text-[11px] text-slate-400 space-y-1">
-            <div class="flex justify-between">
-              <span>🏆 Top Producer:</span>
-              <span class="text-amber-400 font-bold">[ 🔒 LOCKED ]</span>
-            </div>
-            <div class="flex justify-between">
-              <span>⏱️ Unified Time:</span>
-              <span class="text-slate-500 tracking-widest">••••••••••</span>
-            </div>
-            <div class="flex justify-between">
-              <span>📊 Monthly Spend:</span>
-              <span class="text-slate-500 tracking-widest">••••••••••</span>
-            </div>
-            <div class="flex justify-between">
-              <span>💡 Effective ROI:</span>
-              <span class="text-slate-500 tracking-widest">••••••••••</span>
-            </div>
-          </div>
-
-          <div class="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20 text-center">
-            <div class="text-[10px] text-amber-300 uppercase font-semibold">Drop Release Countdown (00:00 UTC)</div>
-            <div id="modalCountdownClock" class="font-mono text-sm font-bold text-amber-400 mt-0.5">--d : --h : --m : --s</div>
-          </div>
-
-          <p class="text-[10px] text-slate-500 italic">
-            Background telemetry is silently accumulating 24/7 in local storage and companion daemon.
-          </p>
-        </div>
-
-        <button type="button" class="close-wrapped-trigger w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-lg text-xs transition">
-          Got It — Keep Tracking 24/7
+        <button type="button" id="closeWrappedBtn" class="text-slate-400 hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-slate-800 transition" title="Close">
+          ✕
         </button>
       </div>
 
-      <!-- Unlocked High-Contrast 16:9 Terminal Card View -->
-      <div id="wrappedUnlockedView" class="space-y-3">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center gap-2">
-            <div class="flex gap-1.5 items-center">
-              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+      <!-- CARDS CONTAINER -->
+      <div id="wrappedCardsContainer" class="space-y-4">
+        
+        <!-- ==============================================
+             CARD 1: 01 / YOUR DEV PERSONA
+             ============================================== -->
+        <div id="personaCardWrapper" class="space-y-2.5">
+          <div id="personaCard" class="wrapped-card p-4 space-y-3 select-text">
+            
+            <!-- Card 1 Top Bar -->
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-[10px] tracking-widest text-slate-400 font-bold uppercase">
+                01 <span class="text-slate-600">/</span> YOUR DEV PERSONA
+              </span>
+              <span class="text-amber-400 text-sm">✦</span>
             </div>
-            <span class="text-[11px] font-mono text-slate-400 font-medium ml-1">devwrap-wrapped.zsh</span>
-          </div>
-          <button type="button" id="closeWrappedBtn" class="close-wrapped-trigger text-slate-400 hover:text-white text-xs px-2 py-1">✕</button>
-        </div>
 
-        <!-- 16:9 Terminal Card Content -->
-        <div id="wrappedCardContent" class="bg-[#030712] p-3.5 rounded-xl border border-indigo-500/40 space-y-2.5 font-mono text-xs text-slate-300 shadow-xl relative overflow-hidden">
-          <!-- Terminal Banner -->
-          <div class="flex items-center justify-between pb-2 border-b border-slate-800/80">
-            <div>
-              <div class="text-white font-bold flex items-center gap-1.5 text-xs">
-                <span>⚡</span> <span id="wrappedMonthTitle">DEV STACK WRAPPED</span> 🚀
+            <!-- Hero Persona: Graphic + Title -->
+            <div class="flex items-center gap-3 pt-0.5">
+              <!-- Concentric Hexagon Glowing Badge -->
+              <div class="hex-badge-glow shrink-0">
+                <div class="hex-ring-outer"></div>
+                <div class="hex-ring-inner"></div>
+                <div class="hex-core">
+                  <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
+                </div>
+                <!-- Sparkle accents -->
+                <span class="absolute -top-1 -right-1 text-amber-300 text-[10px]">✦</span>
+                <span class="absolute -bottom-1 -left-1 text-amber-400 text-[9px]">✦</span>
               </div>
-              <div class="text-[10px] text-slate-500 font-sans">DevWrap Hybrid Telemetry (Web + Desktop)</div>
+
+              <!-- Persona Titles -->
+              <div class="min-w-0 flex-1">
+                <div class="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
+                  THE BUILDER WHO
+                </div>
+                <div class="text-base font-bold leading-tight mt-0.5">
+                  <span id="personaNameLead" class="text-white font-extrabold">Full-Stack</span>
+                  <span id="personaNameTail" class="italic text-amber-300 font-serif font-normal ml-1">Speedrunner</span>
+                </div>
+                <div id="personaTagline" class="text-[11px] text-slate-400 mt-1 leading-snug">
+                  "From 'what if?' to 'it ships.' No detours."
+                </div>
+              </div>
             </div>
-            <!-- Persona Badge -->
-            <div id="wrappedPersonaBadge" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shrink-0">
-              <span id="wrappedPersona">10x Code Artisan</span>
+
+            <!-- Divider -->
+            <div class="border-t border-slate-800/80 my-2"></div>
+
+            <!-- Top Tools Section -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                <span>YOUR TOP TOOLS</span>
+                <span>BY ACTIVE TIME</span>
+              </div>
+
+              <div id="card1ToolsList" class="space-y-2">
+                <!-- Dynamically populated top 3 tools -->
+              </div>
+            </div>
+
+            <!-- Bottom Stats (Most Productive Day & Personal Best Streak) -->
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+              <div class="flex items-center gap-2 bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+                <div class="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xs shrink-0">
+                  🏆
+                </div>
+                <div class="min-w-0">
+                  <div class="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">MOST PRODUCTIVE DAY</div>
+                  <div id="card1ProductiveDay" class="text-[11px] font-bold text-white truncate">Tuesday · 6h 42m</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+                <div class="w-7 h-7 rounded-full bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 text-xs shrink-0">
+                  🔥
+                </div>
+                <div class="min-w-0">
+                  <div class="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">PERSONAL BEST STREAK</div>
+                  <div id="card1Streak" class="text-[11px] font-bold text-white truncate">12 days</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 1 Footer -->
+            <div class="flex items-center justify-between pt-1 text-[8px] font-bold text-slate-500 uppercase tracking-wider border-t border-slate-800/60">
+              <span class="flex items-center gap-1">
+                <span>|||||</span> BUILT DIFFERENT. BUILT DAILY. •
+              </span>
+              <span class="font-mono text-slate-400" id="card1Year">DEVWRAP '26</span>
             </div>
           </div>
 
-          <!-- Metrics Breakdown -->
-          <div class="space-y-1.5 text-[11px]">
-            <div class="flex items-center justify-between">
-              <span class="text-slate-400">🏆 TOP PRODUCER:</span>
-              <span id="wrappedTopTool" class="text-emerald-400 font-bold">Cursor Pro</span>
+          <!-- Card 1 Separate Share Bar -->
+          <div class="space-y-1.5 pt-1">
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="shareCard1XBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold py-2 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                <span>𝕏</span> Share Persona
+              </button>
+              <button type="button" id="shareCard1LinkedInBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                <span>💼</span> Post to LinkedIn
+              </button>
             </div>
-            <div class="flex items-center justify-between">
-              <span class="text-slate-400">📊 TOTAL SPEND:</span>
-              <span id="wrappedSpend" class="text-white font-bold">$0/mo</span>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="copyCard1TextBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-1.5 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition">
+                <span>📋</span> Copy Card Text
+              </button>
+              <button type="button" id="downloadCard1ImgBtn" class="bg-amber-600/25 hover:bg-amber-600/35 border border-amber-500/40 text-amber-300 font-semibold py-1.5 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition">
+                <span>📸</span> Save Persona PNG
+              </button>
             </div>
-            <div class="flex items-center justify-between">
-              <span class="text-slate-400">⏱️ UNIFIED DEV TIME:</span>
-              <span id="wrappedTime" class="text-white font-bold">0.0 hrs</span>
-            </div>
-            <div id="wrappedBreakdown" class="text-[10px] text-indigo-300/90 pl-3 border-l-2 border-indigo-500/30">
-              ↳ Web: 0.0h | Desktop IDE: 0.0h
-            </div>
-            <div class="flex items-center justify-between pt-1 border-t border-slate-800/80">
-              <span class="text-slate-400">💡 EFFECTIVE HOURLY COST:</span>
-              <span id="wrappedAvg" class="text-emerald-300 font-bold">$0.00/hr</span>
-            </div>
-          </div>
-
-          <div class="p-2 rounded bg-slate-900/80 border border-slate-800 text-[10px] text-slate-400 italic font-sans leading-relaxed">
-            "Building with an AI stack that costs less than 1 cup of coffee per active hour."
           </div>
         </div>
 
-        <!-- Social Share Formatting Buttons -->
-        <div class="grid grid-cols-2 gap-2 pt-1">
-          <button type="button" id="copyWrappedTwitterBtn" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition">
-            <span>𝕏</span> Share on X
-          </button>
-          <button type="button" id="copyWrappedLinkedInBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition">
-            <span>💼</span> Post to LinkedIn
-          </button>
+        <!-- ==============================================
+             CARD 2: 02 / YOUR DEV ECONOMY
+             ============================================== -->
+        <div id="economyCardWrapper" class="space-y-2.5 hidden">
+          <div id="economyCard" class="wrapped-card p-4 space-y-3 select-text">
+            
+            <!-- Card 2 Top Bar -->
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-[10px] tracking-widest text-slate-400 font-bold uppercase">
+                02 <span class="text-slate-600">/</span> YOUR DEV ECONOMY
+              </span>
+              <span class="text-purple-400 text-sm">✦</span>
+            </div>
+
+            <!-- Hero Quote: "Every dollar had a purpose." -->
+            <div class="pt-0.5">
+              <div class="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
+                YOUR TOOLS, PUT TO WORK
+              </div>
+              <div class="text-base font-serif font-bold leading-tight mt-0.5 text-white">
+                Every dollar had a <span class="italic text-purple-400 font-serif font-normal">purpose.</span>
+              </div>
+            </div>
+
+            <!-- Total Stack Monthly + Donut Ring -->
+            <div class="flex items-center justify-between bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+              <div>
+                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                  TOTAL STACK · MONTHLY
+                </div>
+                <div class="mt-0.5 flex items-baseline gap-1">
+                  <span id="card2TotalSpend" class="text-2xl font-extrabold text-white tracking-tight">$60.00</span>
+                  <span class="text-xs text-slate-400 font-medium">/ mo</span>
+                </div>
+              </div>
+
+              <!-- SVG Donut Chart with Stack Icon -->
+              <div class="donut-chart-container shrink-0">
+                <svg class="donut-svg" viewBox="0 0 36 36">
+                  <!-- Background Circle -->
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#1E293B" stroke-width="4"></circle>
+                  <!-- Segment 1 (Purple - 50%) -->
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#A855F7" stroke-width="4" stroke-dasharray="44 88" stroke-dashoffset="0"></circle>
+                  <!-- Segment 2 (Yellow - 35%) -->
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#FACC15" stroke-width="4" stroke-dasharray="30 88" stroke-dashoffset="-44"></circle>
+                  <!-- Segment 3 (Teal - 15%) -->
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#14B8A6" stroke-width="4" stroke-dasharray="14 88" stroke-dashoffset="-74"></circle>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center text-slate-300 text-xs">
+                  📚
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub Metrics Row: Active Dev Time & Stack Count -->
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-slate-950/40 p-2 rounded-xl border border-slate-800/60">
+                <div class="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span>⏱️</span> ACTIVE DEV TIME
+                </div>
+                <div class="mt-0.5 flex items-baseline gap-1">
+                  <span id="card2ActiveTime" class="text-base font-extrabold text-white">79.1</span>
+                  <span class="text-[11px] text-slate-400">hrs</span>
+                </div>
+              </div>
+
+              <div class="bg-slate-950/40 p-2 rounded-xl border border-slate-800/60">
+                <div class="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span>&lt;/&gt;</span> YOUR STACK
+                </div>
+                <div class="mt-0.5 flex items-baseline gap-1">
+                  <span id="card2ToolCount" class="text-base font-extrabold text-white">3</span>
+                  <span class="text-[11px] text-slate-400">tools</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Blended Effective Cost Highlight Box with Mini Histogram -->
+            <div class="bg-[#070B13] p-2.5 rounded-xl border border-amber-500/25 relative overflow-hidden space-y-1 shadow-inner">
+              <div class="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                <span>BLENDED EFFECTIVE COST</span>
+                <span class="text-amber-400 text-xs">|||||</span>
+              </div>
+
+              <div class="flex items-baseline gap-1">
+                <span id="card2BlendedRate" class="text-2xl font-extrabold text-yellow-400 tracking-tight">$0.76</span>
+                <span class="text-xs text-yellow-400/80 font-medium">/ hr</span>
+              </div>
+
+              <div class="text-[10px] text-slate-400 italic">
+                A whole lot of building. Less than a coffee.
+              </div>
+
+              <!-- Visual Histogram of mini activity bars -->
+              <div id="card2Histogram" class="flex items-end gap-1 h-5 pt-1">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Best Value Tool Box -->
+            <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80 flex items-center justify-between">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs shrink-0">
+                  ✓
+                </div>
+                <div class="min-w-0">
+                  <div class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">BEST VALUE TOOL</div>
+                  <div class="flex items-baseline gap-1.5 truncate">
+                    <span id="card2BestToolName" class="text-xs font-bold text-white truncate">Cursor Pro</span>
+                    <span id="card2BestToolRate" class="text-[10px] text-slate-400 font-mono shrink-0">$0.47/hr</span>
+                  </div>
+                </div>
+              </div>
+
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider shrink-0">
+                HIGH ROI
+              </span>
+            </div>
+
+            <!-- Card 2 Footer -->
+            <div class="flex items-center justify-between pt-1 text-[8px] font-bold text-slate-500 uppercase tracking-wider border-t border-slate-800/60">
+              <span class="flex items-center gap-1">
+                <span>📚</span> SPEND SMART. SHIP MORE. •
+              </span>
+              <span class="font-mono text-slate-400" id="card2Year">DEVWRAP '26</span>
+            </div>
+          </div>
+
+          <!-- Card 2 Separate Share Bar -->
+          <div class="space-y-1.5 pt-1">
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="shareCard2XBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold py-2 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                <span>𝕏</span> Share Economy
+              </button>
+              <button type="button" id="shareCard2LinkedInBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                <span>💼</span> Post to LinkedIn
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="copyCard2TextBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-1.5 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition">
+                <span>📋</span> Copy Card Text
+              </button>
+              <button type="button" id="downloadCard2ImgBtn" class="bg-purple-600/25 hover:bg-purple-600/35 border border-purple-500/40 text-purple-300 font-semibold py-1.5 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition">
+                <span>📸</span> Save Economy PNG
+              </button>
+            </div>
+          </div>
         </div>
 
-        <button type="button" id="copyWrappedBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition">
-          <span>📋</span> Copy Tweetable Card Text
-        </button>
       </div>
     </div>
   </div>
