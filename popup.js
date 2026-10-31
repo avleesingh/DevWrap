@@ -1372,86 +1372,75 @@ async function renderAndOpenDevStackWrapped() {
   // Max hours among top 3 for scaling progress bars
   const maxHours = Math.max(...top3.map(t => t.unifiedHours), 1);
 
-  // Helper for tool taglines and icons
+  // Helper for tool taglines, styles, and SVG icons matching Lovable
   function getToolMeta(name, domain) {
     const n = (name || '').toLowerCase();
     const d = (domain || '').toLowerCase();
     if (n.includes('claude') || d.includes('claude')) {
       return {
         tagline: 'Your thinking partner',
-        iconBg: 'bg-gradient-to-br from-purple-600 to-indigo-700',
-        iconText: '✦'
+        style: 'tool-claude',
+        svg: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>'
       };
     }
     if (n.includes('cursor') || d.includes('cursor')) {
       return {
         tagline: 'Where the code happened',
-        iconBg: 'bg-slate-800 border border-slate-700',
-        iconText: '</>'
+        style: 'tool-cursor',
+        svg: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
       };
     }
     if (n.includes('replit') || d.includes('replit')) {
       return {
         tagline: 'Ideas into working demos',
-        iconBg: 'bg-amber-600/30 border border-amber-500/40 text-amber-300',
-        iconText: '📚'
+        style: 'tool-replit',
+        svg: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>'
       };
     }
     if (n.includes('code') || d.includes('vscode')) {
       return {
         tagline: 'The primary workshop',
-        iconBg: 'bg-blue-600/30 border border-blue-500/40 text-blue-300',
-        iconText: '💻'
-      };
-    }
-    if (n.includes('terminal') || n.includes('iterm') || n.includes('warp')) {
-      return {
-        tagline: 'Command line sanctuary',
-        iconBg: 'bg-emerald-950 border border-emerald-500/30 text-emerald-400',
-        iconText: '>_'
+        style: 'tool-cursor',
+        svg: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>'
       };
     }
     if (n.includes('chatgpt') || d.includes('chatgpt')) {
       return {
         tagline: 'Reasoning co-pilot',
-        iconBg: 'bg-teal-600/30 border border-teal-500/40 text-teal-300',
-        iconText: '⚡'
+        style: 'tool-claude',
+        svg: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>'
       };
     }
     return {
       tagline: 'Core stack component',
-      iconBg: 'bg-indigo-600/30 border border-indigo-500/40 text-indigo-300',
-      iconText: '⚙️'
+      style: 'tool-custom',
+      svg: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>'
     };
   }
 
   // Render Card 1: 01 / YOUR DEV PERSONA
   if (personaNameLead) personaNameLead.textContent = persona.lead;
   if (personaNameTail) personaNameTail.textContent = persona.tail;
-  if (personaTagline) personaTagline.textContent = `"${persona.tagline}"`;
+  if (personaTagline) personaTagline.textContent = `“${persona.tagline}”`;
 
   if (card1ToolsList) {
     card1ToolsList.innerHTML = top3.map((tool, idx) => {
       const rank = String(idx + 1).padStart(2, '0');
       const meta = getToolMeta(tool.name, tool.domain);
-      const pct = Math.max(15, Math.min(100, Math.round((tool.unifiedHours / maxHours) * 100)));
+      const pct = Math.max(18, Math.min(100, Math.round((tool.unifiedHours / maxHours) * 100)));
       return `
-        <div class="flex items-center justify-between gap-2.5">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <span class="font-mono text-[10px] text-slate-500 font-bold w-4 shrink-0">${rank}</span>
-            <div class="w-7 h-7 rounded-lg ${meta.iconBg} flex items-center justify-center text-xs font-bold shrink-0 shadow-inner">
-              ${meta.iconText}
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="text-xs font-bold text-white truncate">${tool.name}</div>
-              <div class="text-[9px] text-slate-400 truncate">${meta.tagline}</div>
-            </div>
+        <div class="tool-row">
+          <span class="tool-rank">${rank}</span>
+          <span class="tool-icon ${meta.style}">
+            ${meta.svg}
+          </span>
+          <div class="tool-info">
+            <span class="tool-name">${tool.name}</span>
+            <span class="tool-detail">${meta.tagline}</span>
           </div>
-          <div class="text-right shrink-0 w-24">
-            <div class="font-mono text-xs font-bold text-white">${tool.unifiedHours.toFixed(1)} hrs</div>
-            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1">
-              <div class="tool-progress-bar h-full rounded-full" style="width: ${pct}%"></div>
-            </div>
+          <div class="tool-time">
+            <span>${tool.unifiedHours.toFixed(1)} hrs</span>
+            <div class="tool-track"><i style="width: ${pct}%"></i></div>
           </div>
         </div>
       `;
@@ -1462,14 +1451,14 @@ async function renderAndOpenDevStackWrapped() {
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const todayDayName = daysOfWeek[new Date().getDay()];
   if (card1ProductiveDay) {
-    card1ProductiveDay.textContent = `${todayDayName} · ${(combinedTotalHours * 0.4 || 6.7).toFixed(1)}h`;
+    card1ProductiveDay.innerHTML = `${todayDayName} <small>· ${(combinedTotalHours * 0.4 || 6.7).toFixed(1)}h</small>`;
   }
   if (card1Streak) {
     const daysTracked = Object.keys(usageData).length;
-    card1Streak.textContent = `${Math.max(7, daysTracked * 3)} days`;
+    card1Streak.innerHTML = `${Math.max(7, daysTracked * 3)} <small>days</small>`;
   }
   const yearShort = String(status.year).slice(-2);
-  if (card1Year) card1Year.textContent = `DEVWRAP '${yearShort}`;
+  if (card1Year) card1Year.textContent = `DEVWRAP ’${yearShort}`;
 
   // Render Card 2: 02 / YOUR DEV ECONOMY
   const displaySpend = totalMonthlySpend > 0 ? totalMonthlySpend : 60.00;
@@ -1477,23 +1466,25 @@ async function renderAndOpenDevStackWrapped() {
   const displayRate = combinedTotalHours > 0 ? (totalMonthlySpend / combinedTotalHours) : 0.76;
   const toolCount = subscriptions.length || 3;
 
-  if (card2TotalSpend) card2TotalSpend.textContent = `$${displaySpend.toFixed(2)}`;
+  const spendParts = displaySpend.toFixed(2).split('.');
+  const card2TotalSpendWhole = document.getElementById('card2TotalSpendWhole');
+  const card2TotalSpendCents = document.getElementById('card2TotalSpendCents');
+  if (card2TotalSpendWhole) card2TotalSpendWhole.textContent = spendParts[0];
+  if (card2TotalSpendCents) card2TotalSpendCents.textContent = `.${spendParts[1]}`;
+
   if (card2ActiveTime) card2ActiveTime.textContent = displayTime.toFixed(1);
   if (card2ToolCount) card2ToolCount.textContent = `${toolCount}`;
-  if (card2BlendedRate) card2BlendedRate.textContent = `$${displayRate.toFixed(2)}`;
+  if (card2BlendedRate) card2BlendedRate.textContent = displayRate.toFixed(2);
 
   // Best Value Tool
   const bestTool = evaluatedTools.find(t => t.cost > 0 && t.unifiedHours > 0) || evaluatedTools[0] || { name: 'Cursor Pro', rate: 0.47 };
   if (card2BestToolName) card2BestToolName.textContent = bestTool.name;
   if (card2BestToolRate) card2BestToolRate.textContent = `$${Number(bestTool.rate || 0.47).toFixed(2)}/hr`;
-  if (card2Year) card2Year.textContent = `DEVWRAP '${yearShort}`;
+  if (card2Year) card2Year.textContent = `DEVWRAP ’${yearShort}`;
 
-  // Mini Activity Histogram in Card 2
+  // Mini Activity Histogram / Sparkline in Card 2 (31 month bars)
   if (card2Histogram) {
-    const barHeights = [30, 45, 60, 85, 40, 70, 95, 50, 100, 35, 65, 80, 55, 90, 40, 75, 100, 60, 45, 85, 70, 90];
-    card2Histogram.innerHTML = barHeights.map((h, i) => `
-      <div class="histogram-bar" style="height: ${h}%;" title="Day ${i + 1} Activity"></div>
-    `).join('');
+    card2Histogram.innerHTML = Array.from({ length: 31 }, () => '<i></i>').join('');
   }
 
   // Cache current data for sharing
@@ -1789,385 +1780,490 @@ function exportCardImage(cardType) {
   ctx.strokeRect(1, 1, width - 2, height - 2);
 
   if (cardType === 'persona') {
-    // --- DRAW CARD 1: PERSONA ---
-    // Header
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 18px monospace';
-    ctx.fillText('01  /  YOUR DEV PERSONA', 48, 64);
+    // --- DRAW CARD 1: PERSONA (Lovable Deep Green Palette) ---
+    ctx.fillStyle = '#14221C';
+    ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = '#FACC15';
-    ctx.font = '28px sans-serif';
+    // Subtle radial dot texture
+    ctx.fillStyle = 'rgba(240, 248, 240, 0.04)';
+    for (let x = 12; x < width; x += 18) {
+      for (let y = 12; y < height; y += 18) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Outer Border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(1, 1, width - 2, height - 2);
+
+    // Header
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 16px monospace';
+    ctx.fillText('01', 48, 64);
+    ctx.fillStyle = '#FF6B9D';
+    ctx.fillText('/', 74, 64);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.fillText('YOUR DEV PERSONA', 90, 64);
+
+    ctx.fillStyle = '#B8FF00';
+    ctx.font = '24px sans-serif';
     ctx.fillText('✦', width - 72, 66);
 
-    // Glowing Concentric Hexagon Badge
-    const badgeX = 96;
-    const badgeY = 160;
-    
-    // Outer Glow Rings
-    ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
+    // Orbiting Badge
+    const badgeX = 104;
+    const badgeY = 168;
+
+    // Orbit Ring 1 (rotated 35deg)
+    ctx.save();
+    ctx.translate(badgeX, badgeY);
+    ctx.rotate(35 * Math.PI / 180);
+    ctx.scale(0.55, 1);
+    ctx.strokeStyle = 'rgba(184, 255, 0, 0.45)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(badgeX, badgeY, 48, 0, Math.PI * 2);
+    ctx.arc(0, 0, 52, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
 
-    ctx.strokeStyle = 'rgba(250, 204, 21, 0.2)';
+    // Orbit Ring 2 (rotated -35deg)
+    ctx.save();
+    ctx.translate(badgeX, badgeY);
+    ctx.rotate(-35 * Math.PI / 180);
+    ctx.scale(0.55, 1);
+    ctx.strokeStyle = 'rgba(184, 255, 0, 0.45)';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(badgeX, badgeY, 56, 0, Math.PI * 2);
+    ctx.arc(0, 0, 52, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
 
-    // Center Gold Disc
-    const discGrad = ctx.createLinearGradient(badgeX - 34, badgeY - 34, badgeX + 34, badgeY + 34);
-    discGrad.addColorStop(0, '#F59E0B');
-    discGrad.addColorStop(1, '#EAB308');
-    ctx.fillStyle = discGrad;
+    // Center Badge Icon (Lime disc + Bolt)
+    ctx.fillStyle = '#B8FF00';
     ctx.beginPath();
     ctx.arc(badgeX, badgeY, 36, 0, Math.PI * 2);
     ctx.fill();
 
-    // White Center Hexagon
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 30px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('⬡', badgeX, badgeY);
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
+    // Dark Bolt in Center
+    ctx.fillStyle = '#14221C';
+    ctx.beginPath();
+    ctx.moveTo(badgeX + 1, badgeY - 18);
+    ctx.lineTo(badgeX - 10, badgeY + 1);
+    ctx.lineTo(badgeX - 1, badgeY + 1);
+    ctx.lineTo(badgeX - 2, badgeY + 18);
+    ctx.lineTo(badgeX + 10, badgeY - 1);
+    ctx.lineTo(badgeX + 1, badgeY - 1);
+    ctx.closePath();
+    ctx.fill();
 
-    // Persona Title
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillText('THE BUILDER WHO', 170, 134);
+    // Star accents
+    ctx.fillStyle = '#FF6B9D';
+    ctx.font = '22px sans-serif';
+    ctx.fillText('✳', badgeX + 44, badgeY - 32);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 34px sans-serif';
-    ctx.fillText(persona.lead, 170, 172);
-    const leadWidth = ctx.measureText(persona.lead).width;
+    ctx.fillStyle = '#B8FF00';
+    ctx.font = '18px sans-serif';
+    ctx.fillText('✦', badgeX - 52, badgeY + 44);
 
-    ctx.fillStyle = '#FACC15';
-    ctx.font = 'italic 34px Georgia, serif';
-    ctx.fillText(` ${persona.tail}`, 170 + leadWidth, 172);
+    // Persona Title & Tagline
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 13px sans-serif';
+    ctx.fillText('THE BUILDER WHO', 180, 134);
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'italic 18px sans-serif';
-    ctx.fillText(`"${persona.tagline}"`, 170, 208);
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = '500 38px Georgia, serif';
+    ctx.fillText(persona.lead, 180, 172);
+
+    ctx.fillStyle = '#B8FF00';
+    ctx.font = 'italic 500 38px Georgia, serif';
+    ctx.fillText(persona.tail, 180, 214);
+
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '16px sans-serif';
+    ctx.fillText(`“${persona.tagline}”`, 180, 246);
 
     // Divider
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.beginPath();
-    ctx.moveTo(48, 252);
-    ctx.lineTo(width - 48, 252);
+    ctx.moveTo(48, 276);
+    ctx.lineTo(width - 48, 276);
     ctx.stroke();
 
-    // Top Tools Header
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('YOUR TOP TOOLS', 48, 296);
+    // Top Tools Heading
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = '800 14px sans-serif';
+    ctx.fillText('YOUR TOP TOOLS', 48, 310);
     ctx.textAlign = 'right';
-    ctx.fillText('BY ACTIVE TIME', width - 48, 296);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '700 12px sans-serif';
+    ctx.fillText('BY ACTIVE TIME', width - 48, 310);
     ctx.textAlign = 'left';
 
-    // 3 Tools List
+    // Tool Rows
     const maxH = Math.max(...top3.map(t => t.unifiedHours), 1);
     top3.forEach((tool, i) => {
-      const rowY = 360 + (i * 95);
+      const rowY = 370 + (i * 92);
 
       // Rank
-      ctx.fillStyle = '#64748B';
-      ctx.font = 'bold 20px monospace';
+      ctx.fillStyle = '#6B7280';
+      ctx.font = 'bold 18px monospace';
       ctx.fillText(`0${i + 1}`, 48, rowY + 6);
 
-      // Tool Icon Box
-      ctx.fillStyle = i === 0 ? '#4F46E5' : (i === 1 ? '#1E293B' : '#B45309');
+      // Icon circle
+      ctx.fillStyle = i === 0 ? 'rgba(251, 146, 60, 0.2)' : (i === 1 ? 'rgba(255, 255, 255, 0.15)' : 'rgba(184, 255, 0, 0.2)');
       ctx.beginPath();
-      ctx.roundRect(92, rowY - 24, 46, 46, 10);
+      ctx.roundRect(88, rowY - 24, 44, 44, 10);
       ctx.fill();
 
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = i === 0 ? '#FB923C' : (i === 1 ? '#F3F4F6' : '#B8FF00');
       ctx.font = 'bold 18px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(i === 0 ? '✦' : (i === 1 ? '</>' : '📚'), 115, rowY + 5);
+      ctx.fillText(i === 0 ? '✦' : (i === 1 ? '</>' : '📚'), 110, rowY + 5);
       ctx.textAlign = 'left';
 
-      // Tool Name & Role
-      ctx.fillStyle = '#FFFFFF';
+      // Tool Name & Detail
+      ctx.fillStyle = '#F3F4F6';
       ctx.font = 'bold 22px sans-serif';
-      ctx.fillText(tool.name, 154, rowY - 2);
+      ctx.fillText(tool.name, 148, rowY - 2);
 
-      ctx.fillStyle = '#94A3B8';
-      ctx.font = '15px sans-serif';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = '14px sans-serif';
       const role = i === 0 ? 'Your thinking partner' : (i === 1 ? 'Where the code happened' : 'Ideas into working demos');
-      ctx.fillText(role, 154, rowY + 22);
+      ctx.fillText(role, 148, rowY + 20);
 
-      // Hours on Right
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 22px monospace';
+      // Hours & Track on Right
+      ctx.fillStyle = '#F3F4F6';
+      ctx.font = 'bold 20px monospace';
       ctx.textAlign = 'right';
       ctx.fillText(`${tool.unifiedHours.toFixed(1)} hrs`, width - 48, rowY);
 
-      // Progress Bar
-      const barWidth = 140;
+      const barWidth = 130;
       const progressW = Math.round((tool.unifiedHours / maxH) * barWidth);
-      ctx.fillStyle = '#1E293B';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.beginPath();
-      ctx.roundRect(width - 48 - barWidth, rowY + 12, barWidth, 8, 4);
+      ctx.roundRect(width - 48 - barWidth, rowY + 12, barWidth, 6, 3);
       ctx.fill();
 
-      ctx.fillStyle = '#F59E0B';
+      ctx.fillStyle = '#B8FF00';
       ctx.beginPath();
-      ctx.roundRect(width - 48 - barWidth, rowY + 12, progressW, 8, 4);
+      ctx.roundRect(width - 48 - barWidth, rowY + 12, progressW, 6, 3);
       ctx.fill();
       ctx.textAlign = 'left';
     });
 
-    // Bottom Stats Box
-    const boxY = 660;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    // Lower Divider
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.beginPath();
-    ctx.roundRect(48, boxY, 300, 96, 16);
-    ctx.fill();
+    ctx.moveTo(48, 650);
+    ctx.lineTo(width - 48, 650);
     ctx.stroke();
 
-    ctx.fillStyle = '#F59E0B';
-    ctx.font = '28px sans-serif';
-    ctx.fillText('🏆', 68, boxY + 58);
-
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillText('MOST PRODUCTIVE DAY', 114, boxY + 40);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('Tuesday · 6h 42m', 114, boxY + 68);
-
-    // Stat 2 Box
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    // Milestones Row
+    const msY = 700;
+    // Milestone 1 (Trophy)
+    ctx.fillStyle = 'rgba(184, 255, 0, 0.2)';
     ctx.beginPath();
-    ctx.roundRect(width - 348, boxY, 300, 96, 16);
+    ctx.arc(76, msY + 16, 24, 0, Math.PI * 2);
     ctx.fill();
+
+    ctx.fillStyle = '#B8FF00';
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏆', 76, msY + 24);
+    ctx.textAlign = 'left';
+
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 12px sans-serif';
+    ctx.fillText('MOST PRODUCTIVE DAY', 114, msY + 8);
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('Tuesday · 6h 42m', 114, msY + 32);
+
+    // Separator line
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.beginPath();
+    ctx.moveTo(width / 2, msY);
+    ctx.lineTo(width / 2, msY + 44);
     ctx.stroke();
 
-    ctx.fillStyle = '#A855F7';
-    ctx.font = '28px sans-serif';
-    ctx.fillText('🔥', width - 328, boxY + 58);
+    // Milestone 2 (Flame)
+    ctx.fillStyle = 'rgba(255, 107, 157, 0.2)';
+    ctx.beginPath();
+    ctx.arc((width / 2) + 40, msY + 16, 24, 0, Math.PI * 2);
+    ctx.fill();
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillText('PERSONAL BEST STREAK', width - 282, boxY + 40);
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#FF6B9D';
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🔥', (width / 2) + 40, msY + 24);
+    ctx.textAlign = 'left';
+
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 12px sans-serif';
+    ctx.fillText('PERSONAL BEST STREAK', (width / 2) + 76, msY + 8);
+    ctx.fillStyle = '#F3F4F6';
     ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('12 days', width - 282, boxY + 68);
+    ctx.fillText('12 days', (width / 2) + 76, msY + 32);
 
     // Footer
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.beginPath();
     ctx.moveTo(48, 830);
     ctx.lineTo(width - 48, 830);
     ctx.stroke();
 
-    ctx.fillStyle = '#64748B';
+    ctx.fillStyle = '#9CA3AF';
     ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('|||||  BUILT DIFFERENT. BUILT DAILY. •', 48, 874);
+    ctx.fillText('BUILT DIFFERENT. BUILT DAILY.', 48, 874);
+
+    ctx.fillStyle = '#FF6B9D';
+    ctx.fillText('●', 300, 874);
+
     ctx.textAlign = 'right';
+    ctx.fillStyle = '#9CA3AF';
     ctx.font = 'bold 15px monospace';
-    ctx.fillText(`DEVWRAP '${yearShort}`, width - 48, 874);
+    ctx.fillText(`DEVWRAP ’${yearShort}`, width - 48, 874);
     ctx.textAlign = 'left';
 
   } else {
-    // --- DRAW CARD 2: ECONOMY ---
-    // Header
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 18px monospace';
-    ctx.fillText('02  /  YOUR DEV ECONOMY', 48, 64);
+    // --- DRAW CARD 2: ECONOMY (Lovable Surface Palette) ---
+    ctx.fillStyle = '#1D232F';
+    ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = '#A855F7';
-    ctx.font = '28px sans-serif';
+    // Subtle texture
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+    for (let x = 12; x < width; x += 18) {
+      for (let y = 12; y < height; y += 18) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Outer Border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(1, 1, width - 2, height - 2);
+
+    // Header
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 16px monospace';
+    ctx.fillText('02', 48, 64);
+    ctx.fillStyle = '#FF6B9D';
+    ctx.fillText('/', 74, 64);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.fillText('YOUR DEV ECONOMY', 90, 64);
+
+    ctx.fillStyle = '#FF6B9D';
+    ctx.font = '24px sans-serif';
     ctx.fillText('✦', width - 72, 66);
 
     // Quote Section
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 15px sans-serif';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 13px sans-serif';
     ctx.fillText('YOUR TOOLS, PUT TO WORK', 48, 126);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 36px Georgia, serif';
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = '500 42px Georgia, serif';
     ctx.fillText('Every dollar had a ', 48, 172);
     const textW = ctx.measureText('Every dollar had a ').width;
 
-    ctx.fillStyle = '#C084FC';
-    ctx.font = 'italic 36px Georgia, serif';
+    ctx.fillStyle = '#FF6B9D';
+    ctx.font = 'italic 500 42px Georgia, serif';
     ctx.fillText('purpose.', 48 + textW, 172);
 
-    // Total Stack Monthly Box
+    // Total Stack Monthly
     const stackBoxY = 216;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
     ctx.beginPath();
-    ctx.roundRect(48, stackBoxY, width - 96, 114, 18);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.moveTo(48, stackBoxY);
+    ctx.lineTo(width - 48, stackBoxY);
     ctx.stroke();
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillText('TOTAL STACK · MONTHLY', 76, stackBoxY + 44);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 13px sans-serif';
+    ctx.fillText('TOTAL STACK · MONTHLY', 48, stackBoxY + 36);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 46px sans-serif';
-    ctx.fillText(`$${displaySpend.toFixed(2)}`, 76, stackBoxY + 92);
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = 'bold 54px sans-serif';
+    ctx.fillText(`$${displaySpend.toFixed(2)}`, 48, stackBoxY + 92);
     const spendW = ctx.measureText(`$${displaySpend.toFixed(2)}`).width;
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = '20px sans-serif';
-    ctx.fillText(' / mo', 76 + spendW, stackBoxY + 92);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '600 18px sans-serif';
+    ctx.fillText(' / mo', 48 + spendW, stackBoxY + 92);
 
-    // Donut SVG representation
-    const donutX = width - 118;
-    const donutY = stackBoxY + 57;
+    // Conic Gradient Ring on Right
+    const donutX = width - 96;
+    const donutY = stackBoxY + 60;
     ctx.lineWidth = 10;
-    ctx.strokeStyle = '#A855F7';
+
+    // Segment 1 (Coral - 43%)
+    ctx.strokeStyle = '#FF6B9D';
     ctx.beginPath();
-    ctx.arc(donutX, donutY, 32, -Math.PI / 2, Math.PI / 3);
+    ctx.arc(donutX, donutY, 32, -Math.PI / 2, 0.36 * Math.PI);
     ctx.stroke();
 
-    ctx.strokeStyle = '#FACC15';
+    // Segment 2 (Deep Green - 34%)
+    ctx.strokeStyle = '#14221C';
     ctx.beginPath();
-    ctx.arc(donutX, donutY, 32, Math.PI / 3, Math.PI);
+    ctx.arc(donutX, donutY, 32, 0.36 * Math.PI, 1.04 * Math.PI);
     ctx.stroke();
 
-    ctx.strokeStyle = '#14B8A6';
+    // Segment 3 (Lime - 14%)
+    ctx.strokeStyle = '#B8FF00';
     ctx.beginPath();
-    ctx.arc(donutX, donutY, 32, Math.PI, 1.5 * Math.PI);
+    ctx.arc(donutX, donutY, 32, 1.04 * Math.PI, 1.32 * Math.PI);
     ctx.stroke();
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '20px sans-serif';
+    // Segment 4 (Gray - 9%)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.beginPath();
+    ctx.arc(donutX, donutY, 32, 1.32 * Math.PI, 1.5 * Math.PI);
+    ctx.stroke();
+
+    // Ring Center
+    ctx.fillStyle = '#1D232F';
+    ctx.beginPath();
+    ctx.arc(donutX, donutY, 24, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = '18px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('📚', donutX, donutY + 7);
+    ctx.fillText('📚', donutX, donutY + 6);
     ctx.textAlign = 'left';
 
     // Sub Metrics Row
-    const subY = 356;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
+    const subY = 348;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
     ctx.beginPath();
-    ctx.roundRect(48, subY, 296, 84, 16);
-    ctx.fill();
+    ctx.moveTo(48, subY);
+    ctx.lineTo(width - 48, subY);
     ctx.stroke();
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('⏱️ ACTIVE DEV TIME', 72, subY + 34);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 28px sans-serif';
-    ctx.fillText(`${displayTime.toFixed(1)} hrs`, 72, subY + 68);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 13px sans-serif';
+    ctx.fillText('⏱️ ACTIVE DEV TIME', 48, subY + 34);
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = 'bold 30px sans-serif';
+    ctx.fillText(`${displayTime.toFixed(1)} `, 48, subY + 70);
+    const timeW = ctx.measureText(`${displayTime.toFixed(1)} `).width;
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('hrs', 48 + timeW, subY + 70);
 
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
+    // Separator
     ctx.beginPath();
-    ctx.roundRect(width - 344, subY, 296, 84, 16);
-    ctx.fill();
+    ctx.moveTo(width / 2, subY + 12);
+    ctx.lineTo(width / 2, subY + 76);
     ctx.stroke();
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('</> YOUR STACK', width - 320, subY + 34);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 28px sans-serif';
-    ctx.fillText(`${toolCount} tools`, width - 320, subY + 68);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 13px sans-serif';
+    ctx.fillText('</> YOUR STACK', (width / 2) + 32, subY + 34);
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = 'bold 30px sans-serif';
+    ctx.fillText(`${toolCount} `, (width / 2) + 32, subY + 70);
+    const countW = ctx.measureText(`${toolCount} `).width;
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('tools', (width / 2) + 32 + countW, subY + 70);
 
-    // Blended Effective Cost Box
+    // Blended Effective Cost Box (Lovable .rate-panel)
     const costBoxY = 466;
-    ctx.fillStyle = '#060A12';
+    ctx.fillStyle = '#14221C';
     ctx.beginPath();
-    ctx.roundRect(48, costBoxY, width - 96, 190, 18);
+    ctx.roundRect(48, costBoxY, width - 96, 178, 14);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
-    ctx.stroke();
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillText('BLENDED EFFECTIVE COST', 76, costBoxY + 38);
-    ctx.fillStyle = '#F59E0B';
-    ctx.fillText('|||||', width - 110, costBoxY + 38);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 13px sans-serif';
+    ctx.fillText('BLENDED EFFECTIVE COST', 74, costBoxY + 34);
 
-    ctx.fillStyle = '#FACC15';
-    ctx.font = 'bold 52px sans-serif';
-    ctx.fillText(`$${displayRate.toFixed(2)}`, 76, costBoxY + 98);
+    ctx.fillStyle = '#B8FF00';
+    ctx.fillText('|||||', width - 110, costBoxY + 34);
+
+    ctx.fillStyle = '#B8FF00';
+    ctx.font = 'bold 54px sans-serif';
+    ctx.fillText(`$${displayRate.toFixed(2)}`, 74, costBoxY + 92);
     const rateW = ctx.measureText(`$${displayRate.toFixed(2)}`).width;
-    ctx.fillStyle = '#FDE047';
-    ctx.font = '22px sans-serif';
-    ctx.fillText(' / hr', 76 + rateW, costBoxY + 98);
+    ctx.fillStyle = '#F3F4F6';
+    ctx.font = '500 18px sans-serif';
+    ctx.fillText(' / hr', 74 + rateW, costBoxY + 92);
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'italic 16px sans-serif';
-    ctx.fillText('A whole lot of building. Less than a coffee.', 76, costBoxY + 130);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('A whole lot of building. Less than a coffee.', 74, costBoxY + 122);
 
-    // Mini Histogram in Cost Box
-    const histY = costBoxY + 172;
-    const barH = [12, 18, 26, 32, 16, 28, 38, 20, 40, 14, 26, 34, 22, 36, 16, 30, 40, 24, 18, 34, 28, 36];
-    barH.forEach((h, i) => {
-      ctx.fillStyle = i % 2 === 0 ? '#EAB308' : '#F59E0B';
+    // 31 Sparkline bars in Cost Box
+    const histY = costBoxY + 162;
+    const barHeights = [10, 14, 22, 16, 28, 12, 24, 30, 14, 26, 32, 18, 30, 12, 22, 28, 16, 30, 34, 18, 26, 30, 14, 22, 28, 16, 32, 20, 26, 30, 24];
+    barHeights.forEach((h, i) => {
+      ctx.fillStyle = (i === 4 || i === 9 || i === 18 || i === 26) ? '#B8FF00' : 'rgba(184, 255, 0, 0.46)';
       ctx.beginPath();
-      ctx.roundRect(76 + (i * 24), histY - h, 14, h, 3);
+      ctx.roundRect(74 + (i * 18), histY - h, 12, h, 2);
       ctx.fill();
     });
 
     // Best Value Tool Box
-    const bestY = 684;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+    const bestY = 672;
+    ctx.fillStyle = 'rgba(184, 255, 0, 0.15)';
     ctx.beginPath();
-    ctx.roundRect(48, bestY, width - 96, 92, 16);
+    ctx.arc(76, bestY + 34, 22, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.stroke();
 
-    ctx.fillStyle = '#10B981';
-    ctx.beginPath();
-    ctx.arc(88, bestY + 46, 22, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#B8FF00';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✓', 88, bestY + 54);
+    ctx.fillText('✓', 76, bestY + 42);
     ctx.textAlign = 'left';
 
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillText('BEST VALUE TOOL', 126, bestY + 36);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '800 12px sans-serif';
+    ctx.fillText('BEST VALUE TOOL', 114, bestY + 24);
 
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#F3F4F6';
     ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(bestTool.name, 126, bestY + 66);
+    ctx.fillText(bestTool.name, 114, bestY + 52);
     const nameW = ctx.measureText(bestTool.name).width;
 
-    ctx.fillStyle = '#94A3B8';
+    ctx.fillStyle = '#9CA3AF';
     ctx.font = '16px monospace';
-    ctx.fillText(` $${Number(bestTool.rate || 0.47).toFixed(2)}/hr`, 126 + nameW, bestY + 66);
+    ctx.fillText(` $${Number(bestTool.rate || 0.47).toFixed(2)}/hr`, 114 + nameW, bestY + 52);
 
-    // Pill
-    ctx.fillStyle = '#064E3B';
+    // High ROI Chip
+    ctx.fillStyle = 'rgba(184, 255, 0, 0.15)';
     ctx.beginPath();
-    ctx.roundRect(width - 176, bestY + 32, 104, 30, 15);
+    ctx.roundRect(width - 168, bestY + 18, 96, 32, 16);
     ctx.fill();
-    ctx.strokeStyle = '#10B981';
-    ctx.stroke();
 
-    ctx.fillStyle = '#34D399';
-    ctx.font = 'bold 13px sans-serif';
+    ctx.fillStyle = '#B8FF00';
+    ctx.font = '800 13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('HIGH ROI', width - 124, bestY + 52);
+    ctx.fillText('HIGH ROI', width - 120, bestY + 39);
     ctx.textAlign = 'left';
 
     // Footer
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
     ctx.beginPath();
     ctx.moveTo(48, 830);
     ctx.lineTo(width - 48, 830);
     ctx.stroke();
 
-    ctx.fillStyle = '#64748B';
+    ctx.fillStyle = '#9CA3AF';
     ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('📚  SPEND SMART. SHIP MORE. •', 48, 874);
+    ctx.fillText('SPEND SMART. SHIP MORE.', 48, 874);
+
+    ctx.fillStyle = '#FF6B9D';
+    ctx.fillText('●', 270, 874);
+
     ctx.textAlign = 'right';
+    ctx.fillStyle = '#9CA3AF';
     ctx.font = 'bold 15px monospace';
-    ctx.fillText(`DEVWRAP '${yearShort}`, width - 48, 874);
+    ctx.fillText(`DEVWRAP ’${yearShort}`, width - 48, 874);
     ctx.textAlign = 'left';
   }
 

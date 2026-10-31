@@ -425,96 +425,79 @@
         <!-- ==============================================
              CARD 1: 01 / YOUR DEV PERSONA
              ============================================== -->
+        <!-- ==============================================
+             CARD 1: 01 / YOUR DEV PERSONA (Lovable)
+             ============================================== -->
         <div id="personaCardWrapper" class="space-y-2.5">
-          <div id="personaCard" class="wrapped-card p-4 space-y-3 select-text">
-            
-            <!-- Card 1 Top Bar -->
-            <div class="flex items-center justify-between">
-              <span class="font-mono text-[10px] tracking-widest text-slate-400 font-bold uppercase">
-                01 <span class="text-slate-600">/</span> YOUR DEV PERSONA
+          <article class="recap-card persona-card select-text" id="personaCard">
+            <div class="card-topline">
+              <span class="card-index">01 <span class="index-slash">/</span> YOUR DEV PERSONA</span>
+              <span class="card-sparkle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
               </span>
-              <span class="text-amber-400 text-sm">✦</span>
             </div>
 
-            <!-- Hero Persona: Graphic + Title -->
-            <div class="flex items-center gap-3 pt-0.5">
-              <!-- Concentric Hexagon Glowing Badge -->
-              <div class="hex-badge-glow shrink-0">
-                <div class="hex-ring-outer"></div>
-                <div class="hex-ring-inner"></div>
-                <div class="hex-core">
-                  <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                  </svg>
+            <div class="persona-intro">
+              <div class="persona-badge">
+                <div class="badge-orbit orbit-one"></div>
+                <div class="badge-orbit orbit-two"></div>
+                <div class="badge-icon">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                 </div>
-                <!-- Sparkle accents -->
-                <span class="absolute -top-1 -right-1 text-amber-300 text-[10px]">✦</span>
-                <span class="absolute -bottom-1 -left-1 text-amber-400 text-[9px]">✦</span>
+                <span class="badge-star star-a">✳</span>
+                <span class="badge-star star-b">✦</span>
               </div>
-
-              <!-- Persona Titles -->
-              <div class="min-w-0 flex-1">
-                <div class="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
-                  THE BUILDER WHO
-                </div>
-                <div class="text-base font-bold leading-tight mt-0.5">
-                  <span id="personaNameLead" class="text-white font-extrabold">Full-Stack</span>
-                  <span id="personaNameTail" class="italic text-amber-300 font-serif font-normal ml-1">Speedrunner</span>
-                </div>
-                <div id="personaTagline" class="text-[11px] text-slate-400 mt-1 leading-snug">
-                  "From 'what if?' to 'it ships.' No detours."
-                </div>
+              <div class="persona-copy">
+                <p class="micro-label">THE BUILDER WHO</p>
+                <h2><span id="personaNameLead">Full-Stack</span><br /><em><span id="personaNameTail">Speedrunner</span></em></h2>
+                <p class="persona-note" id="personaTagline">From “what if?” to “it ships.” No detours.</p>
               </div>
             </div>
 
-            <!-- Divider -->
-            <div class="border-t border-slate-800/80 my-2"></div>
+            <div class="card-rule"></div>
 
-            <!-- Top Tools Section -->
-            <div class="space-y-2">
-              <div class="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                <span>YOUR TOP TOOLS</span>
-                <span>BY ACTIVE TIME</span>
-              </div>
-
-              <div id="card1ToolsList" class="space-y-2">
-                <!-- Dynamically populated top 3 tools -->
-              </div>
+            <div class="tools-heading">
+              <span class="section-label">YOUR TOP TOOLS</span>
+              <span class="tiny-caption">BY ACTIVE TIME</span>
             </div>
 
-            <!-- Bottom Stats (Most Productive Day & Personal Best Streak) -->
-            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
-              <div class="flex items-center gap-2 bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
-                <div class="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xs shrink-0">
-                  🏆
-                </div>
-                <div class="min-w-0">
-                  <div class="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">MOST PRODUCTIVE DAY</div>
-                  <div id="card1ProductiveDay" class="text-[11px] font-bold text-white truncate">Tuesday · 6h 42m</div>
+            <div class="tool-list" id="card1ToolsList">
+              <!-- Dynamically populated top tools -->
+            </div>
+
+            <div class="card-rule lower-rule"></div>
+
+            <div class="milestone-row">
+              <div class="milestone">
+                <span class="milestone-icon productive-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                </span>
+                <div>
+                  <span class="micro-label">MOST PRODUCTIVE DAY</span>
+                  <strong id="card1ProductiveDay">Tuesday <small>· 6h 42m</small></strong>
                 </div>
               </div>
-
-              <div class="flex items-center gap-2 bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
-                <div class="w-7 h-7 rounded-full bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 text-xs shrink-0">
-                  🔥
-                </div>
-                <div class="min-w-0">
-                  <div class="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">PERSONAL BEST STREAK</div>
-                  <div id="card1Streak" class="text-[11px] font-bold text-white truncate">12 days</div>
+              <div class="milestone-separator"></div>
+              <div class="milestone">
+                <span class="milestone-icon streak-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                </span>
+                <div>
+                  <span class="micro-label">PERSONAL BEST STREAK</span>
+                  <strong id="card1Streak">12 <small>days</small></strong>
                 </div>
               </div>
             </div>
 
-            <!-- Card 1 Footer -->
-            <div class="flex items-center justify-between pt-1 text-[8px] font-bold text-slate-500 uppercase tracking-wider border-t border-slate-800/60">
-              <span class="flex items-center gap-1">
-                <span>|||||</span> BUILT DIFFERENT. BUILT DAILY. •
+            <div class="card-footer">
+              <span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+                BUILT DIFFERENT. BUILT DAILY.
               </span>
-              <span class="font-mono text-slate-400" id="card1Year">DEVWRAP '26</span>
+              <span class="footer-dot">●</span>
+              <span id="card1Year">DEVWRAP ’25</span>
             </div>
-          </div>
+          </article>
 
           <!-- Card 1 Separate Share Bar -->
           <div class="space-y-1.5 pt-1">
@@ -530,7 +513,7 @@
               <button type="button" id="copyCard1TextBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-1.5 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition">
                 <span>📋</span> Copy Card Text
               </button>
-              <button type="button" id="downloadCard1ImgBtn" class="bg-amber-600/25 hover:bg-amber-600/35 border border-amber-500/40 text-amber-300 font-semibold py-1.5 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition">
+              <button type="button" id="downloadCard1ImgBtn" class="bg-emerald-600/25 hover:bg-emerald-600/35 border border-emerald-500/40 text-emerald-300 font-semibold py-1.5 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition">
                 <span>📸</span> Save Persona PNG
               </button>
             </div>
@@ -538,132 +521,90 @@
         </div>
 
         <!-- ==============================================
-             CARD 2: 02 / YOUR DEV ECONOMY
+             CARD 2: 02 / YOUR DEV ECONOMY (Lovable)
              ============================================== -->
         <div id="economyCardWrapper" class="space-y-2.5 hidden">
-          <div id="economyCard" class="wrapped-card p-4 space-y-3 select-text">
-            
-            <!-- Card 2 Top Bar -->
-            <div class="flex items-center justify-between">
-              <span class="font-mono text-[10px] tracking-widest text-slate-400 font-bold uppercase">
-                02 <span class="text-slate-600">/</span> YOUR DEV ECONOMY
+          <article class="recap-card spend-card select-text" id="economyCard">
+            <div class="card-topline">
+              <span class="card-index">02 <span class="index-slash">/</span> YOUR DEV ECONOMY</span>
+              <span class="card-sparkle spend-sparkle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
               </span>
-              <span class="text-purple-400 text-sm">✦</span>
             </div>
 
-            <!-- Hero Quote: "Every dollar had a purpose." -->
-            <div class="pt-0.5">
-              <div class="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
-                YOUR TOOLS, PUT TO WORK
-              </div>
-              <div class="text-base font-serif font-bold leading-tight mt-0.5 text-white">
-                Every dollar had a <span class="italic text-purple-400 font-serif font-normal">purpose.</span>
-              </div>
+            <div class="spend-heading">
+              <p class="micro-label">YOUR TOOLS, PUT TO WORK</p>
+              <h2>Every dollar<br />had a <em>purpose.</em></h2>
             </div>
 
-            <!-- Total Stack Monthly + Donut Ring -->
-            <div class="flex items-center justify-between bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+            <div class="spend-total">
               <div>
-                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                  TOTAL STACK · MONTHLY
-                </div>
-                <div class="mt-0.5 flex items-baseline gap-1">
-                  <span id="card2TotalSpend" class="text-2xl font-extrabold text-white tracking-tight">$60.00</span>
-                  <span class="text-xs text-slate-400 font-medium">/ mo</span>
-                </div>
+                <span class="section-label">TOTAL STACK · MONTHLY</span>
+                <p class="spend-number" id="card2TotalSpend">
+                  <span class="currency">$</span><span id="card2TotalSpendWhole">60</span><span class="cents" id="card2TotalSpendCents">.00</span><span class="per-month">/ mo</span>
+                </p>
               </div>
-
-              <!-- SVG Donut Chart with Stack Icon -->
-              <div class="donut-chart-container shrink-0">
-                <svg class="donut-svg" viewBox="0 0 36 36">
-                  <!-- Background Circle -->
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#1E293B" stroke-width="4"></circle>
-                  <!-- Segment 1 (Purple - 50%) -->
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#A855F7" stroke-width="4" stroke-dasharray="44 88" stroke-dashoffset="0"></circle>
-                  <!-- Segment 2 (Yellow - 35%) -->
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#FACC15" stroke-width="4" stroke-dasharray="30 88" stroke-dashoffset="-44"></circle>
-                  <!-- Segment 3 (Teal - 15%) -->
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#14B8A6" stroke-width="4" stroke-dasharray="14 88" stroke-dashoffset="-74"></circle>
-                </svg>
-                <div class="absolute inset-0 flex items-center justify-center text-slate-300 text-xs">
-                  📚
-                </div>
+              <div class="spend-ring">
+                <span class="ring-center">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+                </span>
               </div>
             </div>
 
-            <!-- Sub Metrics Row: Active Dev Time & Stack Count -->
-            <div class="grid grid-cols-2 gap-2">
-              <div class="bg-slate-950/40 p-2 rounded-xl border border-slate-800/60">
-                <div class="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                  <span>⏱️</span> ACTIVE DEV TIME
-                </div>
-                <div class="mt-0.5 flex items-baseline gap-1">
-                  <span id="card2ActiveTime" class="text-base font-extrabold text-white">79.1</span>
-                  <span class="text-[11px] text-slate-400">hrs</span>
-                </div>
+            <div class="spend-details">
+              <div class="detail-block">
+                <span class="micro-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16.5 12"/></svg>
+                  ACTIVE DEV TIME
+                </span>
+                <strong id="card2ActiveTimeWrapper"><span id="card2ActiveTime">79.1</span> <small>hrs</small></strong>
               </div>
-
-              <div class="bg-slate-950/40 p-2 rounded-xl border border-slate-800/60">
-                <div class="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                  <span>&lt;/&gt;</span> YOUR STACK
-                </div>
-                <div class="mt-0.5 flex items-baseline gap-1">
-                  <span id="card2ToolCount" class="text-base font-extrabold text-white">3</span>
-                  <span class="text-[11px] text-slate-400">tools</span>
-                </div>
+              <div class="detail-divider"></div>
+              <div class="detail-block">
+                <span class="micro-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  YOUR STACK
+                </span>
+                <strong id="card2ToolCountWrapper"><span id="card2ToolCount">3</span> <small>tools</small></strong>
               </div>
             </div>
 
-            <!-- Blended Effective Cost Highlight Box with Mini Histogram -->
-            <div class="bg-[#070B13] p-2.5 rounded-xl border border-amber-500/25 relative overflow-hidden space-y-1 shadow-inner">
-              <div class="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                <span>BLENDED EFFECTIVE COST</span>
-                <span class="text-amber-400 text-xs">|||||</span>
+            <div class="rate-panel">
+              <div class="rate-header">
+                <span class="micro-label">BLENDED EFFECTIVE COST</span>
+                <span class="rate-mark">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+                </span>
               </div>
-
-              <div class="flex items-baseline gap-1">
-                <span id="card2BlendedRate" class="text-2xl font-extrabold text-yellow-400 tracking-tight">$0.76</span>
-                <span class="text-xs text-yellow-400/80 font-medium">/ hr</span>
+              <div class="rate-value">
+                <span class="rate-currency">$</span><span id="card2BlendedRate">0.76</span><span class="rate-unit">/ hr</span>
               </div>
-
-              <div class="text-[10px] text-slate-400 italic">
-                A whole lot of building. Less than a coffee.
-              </div>
-
-              <!-- Visual Histogram of mini activity bars -->
-              <div id="card2Histogram" class="flex items-end gap-1 h-5 pt-1">
-                <!-- Populated dynamically -->
+              <div class="rate-caption">A whole lot of building. Less than a coffee.</div>
+              <div class="rate-sparkline" id="card2Histogram">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
               </div>
             </div>
 
-            <!-- Best Value Tool Box -->
-            <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80 flex items-center justify-between">
-              <div class="flex items-center gap-2 min-w-0">
-                <div class="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs shrink-0">
-                  ✓
-                </div>
-                <div class="min-w-0">
-                  <div class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">BEST VALUE TOOL</div>
-                  <div class="flex items-baseline gap-1.5 truncate">
-                    <span id="card2BestToolName" class="text-xs font-bold text-white truncate">Cursor Pro</span>
-                    <span id="card2BestToolRate" class="text-[10px] text-slate-400 font-mono shrink-0">$0.47/hr</span>
-                  </div>
-                </div>
-              </div>
-
-              <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider shrink-0">
-                HIGH ROI
+            <div class="best-value">
+              <span class="best-value-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </span>
+              <div class="best-copy">
+                <span class="micro-label">BEST VALUE TOOL</span>
+                <strong><span id="card2BestToolName">Cursor Pro</span> <span id="card2BestToolRate">$0.47/hr</span></strong>
+              </div>
+              <span class="roi-chip">HIGH ROI</span>
             </div>
 
-            <!-- Card 2 Footer -->
-            <div class="flex items-center justify-between pt-1 text-[8px] font-bold text-slate-500 uppercase tracking-wider border-t border-slate-800/60">
-              <span class="flex items-center gap-1">
-                <span>📚</span> SPEND SMART. SHIP MORE. •
+            <div class="card-footer spend-footer">
+              <span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+                SPEND SMART. SHIP MORE.
               </span>
-              <span class="font-mono text-slate-400" id="card2Year">DEVWRAP '26</span>
+              <span class="footer-dot">●</span>
+              <span id="card2Year">DEVWRAP ’25</span>
             </div>
-          </div>
+          </article>
 
           <!-- Card 2 Separate Share Bar -->
           <div class="space-y-1.5 pt-1">
