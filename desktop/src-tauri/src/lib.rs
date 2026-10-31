@@ -332,15 +332,65 @@ async fn run_window_poller(heartbeat_store: HeartbeatStore, filter_store: Filter
 
                 // Match against dynamic developer tool inclusion list using robust normalization
                 if let Some(matched) = current_filters.iter().find(|filter| {
-                    let f = filter.to_lowercase();
+                    let f = filter.trim().to_lowercase();
                     let norm_f = normalize_for_match(&f);
 
-                    app_name_lower.contains(&f)
+                    if norm_f.is_empty() {
+                        return false;
+                    }
+
+                    // Direct case-insensitive substring match against app name, path, and window title
+                    let direct_match = app_name_lower.contains(&f)
                         || process_path_lower.contains(&f)
-                        || (!norm_f.is_empty() && (norm_app.contains(&norm_f) || norm_path.contains(&norm_f) || norm_title.contains(&norm_f)))
-                        || (norm_f == "code" && (norm_app.contains("vscode") || norm_app.contains("visualstudiocode") || norm_app == "code"))
-                        || (norm_f == "vscode" && (norm_app.contains("code") || norm_app.contains("visualstudiocode")))
-                        || (norm_f == "terminal" && (norm_app.contains("iterm") || norm_app.contains("warp") || norm_app.contains("alacritty") || norm_app.contains("terminal")))
+                        || window.title.to_lowercase().contains(&f)
+                        || norm_app.contains(&norm_f)
+                        || norm_path.contains(&norm_f)
+                        || norm_title.contains(&norm_f);
+
+                    if direct_match {
+                        return true;
+                    }
+
+                    // Antigravity developer tool: match process names and window titles like "Antigravity", "Cursor", and "Code"
+                    if norm_f == "antigravity" {
+                        return norm_app.contains("antigravity")
+                            || norm_path.contains("antigravity")
+                            || norm_title.contains("antigravity")
+                            || norm_app.contains("cursor")
+                            || norm_title.contains("cursor")
+                            || norm_path.contains("cursor")
+                            || norm_app.contains("code")
+                            || norm_title.contains("code")
+                            || norm_path.contains("code");
+                    }
+
+                    // Code / VS Code aliases
+                    if norm_f == "code" || norm_f == "vscode" {
+                        return norm_app.contains("vscode")
+                            || norm_app.contains("visualstudiocode")
+                            || norm_app == "code"
+                            || norm_title.contains("visual studio code")
+                            || norm_path.contains("visual studio code")
+                            || norm_path.ends_with("/code");
+                    }
+
+                    // Cursor aliases
+                    if norm_f == "cursor" {
+                        return norm_app.contains("cursor")
+                            || norm_path.contains("cursor")
+                            || norm_title.contains("cursor");
+                    }
+
+                    // Terminal aliases
+                    if norm_f == "terminal" {
+                        return norm_app.contains("iterm")
+                            || norm_app.contains("warp")
+                            || norm_app.contains("alacritty")
+                            || norm_app.contains("terminal")
+                            || norm_title.contains("terminal");
+                    }
+
+                    false
                 }) {
                     let now = SystemTime::now()
                         .duration_since(UNIX_EPOCH)
@@ -624,11 +674,15 @@ pub fn run() {
 
             let tray_menu = Menu::with_items(app, &[&open_item, &status_item, &quit_item])?;
 
-            let tray_icon = app.default_window_icon().unwrap().clone();
+            let tray_icon = match app.default_window_icon() {
+                Some(icon) => icon.clone(),
+                None => tauri::include_image!("icons/32x32.png"),
+            };
 
             // 2. Build system tray icon with left-click toggle & menu action handlers
             let _tray = TrayIconBuilder::with_id("devwrap-tray")
                 .icon(tray_icon)
+                .icon_as_template(true)
                 .tooltip("DevWrap Desktop Companion")
                 .menu(&tray_menu)
                 .show_menu_on_left_click(false)
@@ -649,24 +703,30 @@ pub fn run() {
                 })
                 .on_tray_icon_event(|tray, event| {
                     // Left-clicking tray icon toggles window visibility (Show/Hide)
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event
-                    {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
-                            let is_visible = window.is_visible().unwrap_or(false);
-                            let is_minimized = window.is_minimized().unwrap_or(false);
-                            if is_visible && !is_minimized {
-                                let _ = window.hide();
-                            } else {
-                                let _ = window.show();
-                                let _ = window.unminimize();
-                                let _ = window.set_focus();
+                    match event {
+                        TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        }
+                        | TrayIconEvent::DoubleClick {
+                            button: MouseButton::Left,
+                            ..
+                        } => {
+                            let app = tray.app_handle();
+                            if let Some(window) = app.get_webview_window("main") {
+                                let is_visible = window.is_visible().unwrap_or(false);
+                                let is_minimized = window.is_minimized().unwrap_or(false);
+                                if is_visible && !is_minimized {
+                                    let _ = window.hide();
+                                } else {
+                                    let _ = window.show();
+                                    let _ = window.unminimize();
+                                    let _ = window.set_focus();
+                                }
                             }
                         }
+                        _ => {}
                     }
                 })
                 .build(app)?;
@@ -745,6 +805,51 @@ mod tests {
         assert_eq!(extract_filter_from_name("iTerm2", "/Applications/iTerm.app"), "iterm2");
         assert_eq!(extract_filter_from_name("Postman", "/Applications/Postman.app"), "postman");
         assert_eq!(extract_filter_from_name("TablePlus", "/Applications/TablePlus.app"), "tableplus");
+    }
+
+    #[test]
+    fn test_antigravity_and_ide_matching() {
+        let _filters = vec!["antigravity".to_string(), "cursor".to_string(), "code".to_string()];
+
+        let check_matches = |filter: &str, app: &str, path: &str, title: &str| -> bool {
+            let f = filter.trim().to_lowercase();
+            let norm_f = normalize_for_match(&f);
+            let app_name_lower = app.to_lowercase();
+            let process_path_lower = path.to_lowercase();
+            let norm_app = normalize_for_match(&app_name_lower);
+            let norm_path = normalize_for_match(&process_path_lower);
+            let norm_title = normalize_for_match(&title.to_lowercase());
+
+            let direct_match = app_name_lower.contains(&f)
+                || process_path_lower.contains(&f)
+                || title.to_lowercase().contains(&f)
+                || norm_app.contains(&norm_f)
+                || norm_path.contains(&norm_f)
+                || norm_title.contains(&norm_f);
+
+            if direct_match {
+                return true;
+            }
+
+            if norm_f == "antigravity" {
+                return norm_app.contains("antigravity")
+                    || norm_path.contains("antigravity")
+                    || norm_title.contains("antigravity")
+                    || norm_app.contains("cursor")
+                    || norm_title.contains("cursor")
+                    || norm_path.contains("cursor")
+                    || norm_app.contains("code")
+                    || norm_title.contains("code")
+                    || norm_path.contains("code");
+            }
+            false
+        };
+
+        // Antigravity matches app names and titles for Antigravity, Cursor, and Code
+        assert!(check_matches("antigravity", "Antigravity IDE", "/Applications/Antigravity IDE.app", "lib.rs - Extension"));
+        assert!(check_matches("antigravity", "Cursor", "/Applications/Cursor.app", "lib.rs - Extension - Cursor"));
+        assert!(check_matches("antigravity", "Code", "/Applications/Visual Studio Code.app", "lib.rs - Extension - Code"));
+        assert!(check_matches("antigravity", "Electron", "/usr/local/bin/electron", "Antigravity IDE - Project"));
     }
 
     #[tokio::test]

@@ -345,11 +345,13 @@ function matchesSubscriptionHeartbeat(sub, hb) {
   // Common developer tool aliases
   if (subName.includes('cursor') || rawDom.includes('cursor')) {
     tokens.add('cursor');
+    tokens.add('antigravity');
   }
   if (subName.includes('code') || rawDom.includes('code') || subName.includes('vs code') || rawDom.includes('visualstudio')) {
     tokens.add('code');
     tokens.add('vscode');
     tokens.add('visual studio code');
+    tokens.add('antigravity');
   }
   if (subName.includes('terminal') || subName.includes('iterm') || rawDom.includes('iterm') || subName.includes('warp') || rawDom.includes('warp')) {
     tokens.add('terminal');
@@ -366,6 +368,8 @@ function matchesSubscriptionHeartbeat(sub, hb) {
   }
   if (subName.includes('antigravity') || rawDom.includes('antigravity')) {
     tokens.add('antigravity');
+    tokens.add('cursor');
+    tokens.add('code');
   }
 
   for (const token of tokens) {

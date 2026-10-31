@@ -563,11 +563,13 @@ function matchesSubscriptionHeartbeat(sub, hb) {
   // Common developer tool aliases
   if (subName.includes('cursor') || rawDom.includes('cursor')) {
     tokens.add('cursor');
+    tokens.add('antigravity');
   }
   if (subName.includes('code') || rawDom.includes('code') || subName.includes('vs code') || rawDom.includes('visualstudio')) {
     tokens.add('code');
     tokens.add('vscode');
     tokens.add('visual studio code');
+    tokens.add('antigravity');
   }
   if (subName.includes('terminal') || subName.includes('iterm') || rawDom.includes('iterm') || subName.includes('warp') || rawDom.includes('warp')) {
     tokens.add('terminal');
@@ -584,6 +586,8 @@ function matchesSubscriptionHeartbeat(sub, hb) {
   }
   if (subName.includes('antigravity') || rawDom.includes('antigravity')) {
     tokens.add('antigravity');
+    tokens.add('cursor');
+    tokens.add('code');
   }
 
   for (const token of tokens) {
@@ -615,7 +619,7 @@ function matchesSubscriptionHeartbeat(sub, hb) {
  * Ingests local desktop heartbeats from http://127.0.0.1:8080/stats.
  * Dynamically aggregates active seconds logged across all monitored filters
  * matching custom process filters (case-insensitive substring match on process name and window title)
- * and saves desktop hours to chrome.storage.local under their respective tool cards.
+ * and directly saves desktop minutes/hours to chrome.storage.local under their respective tool cards.
  */
 async function ingestDesktopStats() {
   try {
@@ -642,13 +646,78 @@ async function ingestDesktopStats() {
 
     desktopStats = statsByFilter;
 
-    // Delegate desktop stats sync to background script so storage isn't overwritten by popup
-    chrome.runtime.sendMessage({ action: 'SYNC_DESKTOP_STATS' }, (res) => {
-      if (res && res.usageData) {
-        usageData = res.usageData;
-        renderUI();
+    // Fetch latest storage data and directly compute desktop tracking
+    const stored = await chrome.storage.local.get(['subscriptions', 'usageData']);
+    const subs = stored.subscriptions || subscriptions || [];
+    const currentUsage = stored.usageData || usageData || {};
+    const today = getTodayKey();
+    const month = getCurrentMonthKey();
+
+    subs.forEach(sub => {
+      const dom = normalizeDomain(sub.domain);
+
+      // Aggregate desktop heartbeats matching custom process filters
+      let matchingSeconds = 0;
+      const dailyDesktop = {};
+
+      heartbeats.forEach(hb => {
+        const dur = Number(hb.duration_seconds) || 15;
+        if (matchesSubscriptionHeartbeat(sub, hb)) {
+          matchingSeconds += dur;
+          const hbDay = hb.timestamp ? getDateKey(new Date(hb.timestamp * 1000)) : today;
+          dailyDesktop[hbDay] = (dailyDesktop[hbDay] || 0) + dur;
+        }
+      });
+
+      if (!currentUsage[dom]) {
+        currentUsage[dom] = {
+          webSeconds: 0,
+          desktopSeconds: 0,
+          baselineDesktopSeconds: 0,
+          totalSeconds: 0,
+          dailySeconds: {},
+          monthlySeconds: {},
+          dailyWebSeconds: {},
+          dailyDesktopSeconds: {},
+          lastActive: null
+        };
       }
+
+      if (!currentUsage[dom].dailySeconds) currentUsage[dom].dailySeconds = {};
+      if (!currentUsage[dom].dailyWebSeconds) currentUsage[dom].dailyWebSeconds = {};
+      if (!currentUsage[dom].dailyDesktopSeconds) currentUsage[dom].dailyDesktopSeconds = {};
+      if (!currentUsage[dom].monthlySeconds) currentUsage[dom].monthlySeconds = {};
+
+      // Record daily desktop tracking and update combined daily totals
+      Object.entries(dailyDesktop).forEach(([dayKey, sec]) => {
+        currentUsage[dom].dailyDesktopSeconds[dayKey] = sec;
+        const webSec = currentUsage[dom].dailyWebSeconds[dayKey] || 0;
+        currentUsage[dom].dailySeconds[dayKey] = webSec + sec;
+      });
+
+      const baseline = currentUsage[dom].baselineDesktopSeconds || 0;
+      const newDesktopSeconds = baseline + matchingSeconds;
+
+      currentUsage[dom].desktopSeconds = newDesktopSeconds;
+      currentUsage[dom].totalSeconds = (currentUsage[dom].webSeconds || 0) + newDesktopSeconds;
+      currentUsage[dom].monthlySeconds[month] = currentUsage[dom].totalSeconds;
     });
+
+    usageData = currentUsage;
+
+    await chrome.storage.local.set({
+      desktopHeartbeats: heartbeats,
+      desktopStats: statsByFilter,
+      lastDesktopSync: Date.now(),
+      usageData: currentUsage
+    });
+
+    renderUI();
+
+    // Also notify background script to sync memory state if alive
+    try {
+      chrome.runtime.sendMessage({ action: 'SYNC_DESKTOP_STATS' });
+    } catch {}
   } catch (err) {
     console.warn('[DevWrap] Error ingesting desktop stats:', err);
   }
@@ -2511,6 +2580,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dropCountdownTimer) clearInterval(dropCountdownTimer);
   dropCountdownTimer = setInterval(updateDropCountdownUI, 1000);
 
-  // Run 5-second health check and ingestion loop while popup is active
-  setInterval(checkDesktopCompanionHealth, 5000);
+  // Run 5-second health check and desktop stats ingestion loop while popup is active
+  setInterval(async () => {
+    await checkDesktopCompanionHealth();
+    await ingestDesktopStats();
+  }, 5000);
 });
